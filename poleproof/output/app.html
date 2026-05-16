@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <title>PoleProof - Utility Pole Risk Receipts</title>
   <style>
     :root {
@@ -417,6 +418,22 @@
       min-height: 360px;
     }
 
+    #realMap {
+      display: none;
+      width: 100%;
+      height: min(42vh, 430px);
+      min-height: 360px;
+      background: var(--map-bg);
+    }
+
+    .map-shell.real-map-active #realMap {
+      display: block;
+    }
+
+    .map-shell.real-map-active #map {
+      display: none;
+    }
+
     .map-tip {
       position: absolute;
       z-index: 4;
@@ -430,6 +447,108 @@
       font-size: 12px;
       pointer-events: none;
       box-shadow: var(--shadow);
+    }
+
+    .leaflet-container {
+      font: inherit;
+      color: var(--ink);
+      background: var(--map-bg);
+    }
+
+    .leaflet-control-attribution,
+    .leaflet-control-zoom a {
+      color: #1c2a21;
+    }
+
+    .pole-marker-wrap {
+      border: 0;
+      background: transparent;
+    }
+
+    .pole-marker-pin {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 2px solid rgba(255, 255, 255, 0.96);
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(9, 18, 12, 0.28);
+    }
+
+    .pole-marker-pin.context {
+      border-width: 1px;
+      opacity: 0.52;
+      box-shadow: none;
+    }
+
+    .pole-marker-pin.packet {
+      border-color: var(--blue);
+      opacity: 0.98;
+    }
+
+    .pole-marker-pin.selected {
+      border-color: var(--ink);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 28%, transparent), 0 4px 14px rgba(9, 18, 12, 0.34);
+    }
+
+    .leaflet-tooltip.pole-tooltip {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      color: var(--ink);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .leaflet-popup-content {
+      margin: 12px;
+      min-width: 190px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .map-popup strong,
+    .map-popup span {
+      display: block;
+    }
+
+    .map-popup span {
+      margin-top: 4px;
+      color: var(--muted);
+    }
+
+    .map-popup-actions,
+    .location-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .map-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel);
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .map-link:hover {
+      border-color: var(--accent);
+      color: var(--accent-dark);
     }
 
     .worklist {
@@ -1478,6 +1597,11 @@
       min-height: 430px;
     }
 
+    #realMap {
+      height: min(48vh, 500px);
+      min-height: 430px;
+    }
+
     .table-wrap {
       max-height: 310px;
     }
@@ -1557,11 +1681,17 @@
         min-height: auto;
       }
 
+      .field {
+        order: 1;
+      }
+
       .controls {
+        order: 2;
         grid-row: auto;
       }
 
       .receipt {
+        order: 3;
         grid-column: auto;
       }
 
@@ -1605,7 +1735,7 @@
       }
 
       .kpis {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
       }
 
       .multi-chip {
@@ -1618,6 +1748,10 @@
       }
 
       #map {
+        min-height: 320px;
+      }
+
+      #realMap {
         min-height: 320px;
       }
 
@@ -1733,7 +1867,7 @@
         <div class="field-title">
           <div>
             <h2>Evidence field</h2>
-            <p id="fieldSubtitle">Synthetic Southeast Michigan pole fleet with receipt-level evidence and crew packets.</p>
+            <p id="fieldSubtitle">Real Southeast Michigan map with pole work packets, receipt-level evidence, and nearby Street View handoff.</p>
             <div class="field-meta" id="fieldMeta"></div>
           </div>
           <div class="field-tools">
@@ -1755,7 +1889,8 @@
             <div class="depth-fallback" id="depthFallback" hidden>3D risk layer unavailable</div>
           </section>
 
-          <div class="map-shell">
+          <div class="map-shell" id="mapShell">
+            <div id="realMap" aria-label="Real map of Southeast Michigan pole work packets"></div>
             <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Southeast Michigan utility pole risk field"></svg>
             <div class="map-tip" id="mapTip"></div>
           </div>
@@ -1863,6 +1998,8 @@
         depthCanvas: document.getElementById("riskDepthCanvas"),
         depthHud: document.getElementById("depthHud"),
         depthFallback: document.getElementById("depthFallback"),
+        mapShell: document.getElementById("mapShell"),
+        realMap: document.getElementById("realMap"),
         map: document.getElementById("map"),
         mapTip: document.getElementById("mapTip"),
         workRows: document.getElementById("workRows"),
@@ -2217,6 +2354,179 @@
           '<span>avg packet risk ' + pct1(avgRisk) + '</span>';
       }
 
+      var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      var OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      var realMap = {
+        loading: false,
+        ready: false,
+        error: false,
+        map: null,
+        layer: null,
+        L: null,
+        rows: [],
+        packets: []
+      };
+
+      function coordinateText(p) {
+        return p.lat.toFixed(5) + ", " + p.lon.toFixed(5);
+      }
+
+      function googleMapsUrl(p) {
+        return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.lat + "," + p.lon);
+      }
+
+      function streetViewUrl(p) {
+        return "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + encodeURIComponent(p.lat + "," + p.lon);
+      }
+
+      function priorityLabel(p) {
+        if (p.tier === "critical") return "Fix first";
+        if (p.tier === "high") return "Needs attention";
+        if (p.tier === "elevated") return "Watch closely";
+        return "Routine check";
+      }
+
+      function locationActions(p) {
+        return '<div class="location-actions">' +
+          '<a class="map-link" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open in Google Maps</a>' +
+          '<a class="map-link" href="' + esc(streetViewUrl(p)) + '" target="_blank" rel="noopener">Open nearby Street View</a>' +
+        '</div>';
+      }
+
+      function markerIcon(p, inPacket) {
+        var L = realMap.L;
+        var selected = p.id === state.selectedId;
+        var size = selected ? 24 : (inPacket ? 17 : 10);
+        var cls = "pole-marker-pin" + (inPacket ? " packet" : " context") + (selected ? " selected" : "");
+        return L.divIcon({
+          className: "pole-marker-wrap",
+          html: '<span class="' + cls + '" style="background:' + esc(colorForTier(p.tier)) + '"></span>',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -size / 2]
+        });
+      }
+
+      function markerTooltip(p, inPacket) {
+        return '<strong>' + esc(priorityLabel(p)) + ' / ' + esc(p.county) + ' County</strong><br>' +
+          esc(inPacket ? "Selected work packet" : "Nearby pole context") + '<br>' +
+          'Risk ' + pct1(p.risk) + ' / ' + esc(p.action);
+      }
+
+      function markerPopup(p) {
+        return '<div class="map-popup">' +
+          '<strong>' + esc(priorityLabel(p)) + ' in ' + esc(p.county) + ' County</strong>' +
+          '<span>' + esc(p.receipt) + ' / ' + esc(p.action) + '</span>' +
+          '<span>Near ' + esc(coordinateText(p)) + '</span>' +
+          locationActions(p) +
+        '</div>';
+      }
+
+      function initRealMap() {
+        if (!els.realMap || realMap.ready || realMap.loading || realMap.error) return;
+        if (window.L && window.L.map) {
+          createRealMap();
+          return;
+        }
+        realMap.loading = true;
+        var script = document.createElement("script");
+        script.src = LEAFLET_JS_URL;
+        script.async = true;
+        script.onload = function () {
+          realMap.loading = false;
+          createRealMap();
+        };
+        script.onerror = function () {
+          realMap.loading = false;
+          realMap.error = true;
+          if (els.mapShell) {
+            els.mapShell.classList.remove("real-map-active");
+            els.mapShell.classList.add("real-map-error");
+          }
+        };
+        document.head.appendChild(script);
+      }
+
+      function createRealMap() {
+        if (realMap.ready || !window.L || !els.realMap) return;
+        if (els.mapShell) els.mapShell.classList.add("real-map-active");
+        realMap.L = window.L;
+        var L = realMap.L;
+        realMap.map = L.map(els.realMap, {
+          zoomControl: false,
+          scrollWheelZoom: false
+        }).setView([42.68, -83.45], 8);
+        L.control.zoom({ position: "bottomright" }).addTo(realMap.map);
+        L.tileLayer(OSM_TILE_URL, {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(realMap.map);
+        realMap.layer = L.layerGroup().addTo(realMap.map);
+        realMap.ready = true;
+        setTimeout(function () {
+          realMap.map.invalidateSize();
+          refreshRealMap();
+        }, 0);
+      }
+
+      function refreshRealMap() {
+        if (!realMap.ready) return;
+        var L = realMap.L;
+        var rows = realMap.rows;
+        var packets = realMap.packets;
+        var packetIds = {};
+        packets.forEach(function (p) { packetIds[p.id] = true; });
+        var selected = selectedPole();
+        var context = rows.filter(function (p, i) {
+          return !packetIds[p.id] && i % 24 === 0;
+        }).slice(0, 30);
+        var shown = context.concat(packets);
+        if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
+        realMap.layer.clearLayers();
+        var selectedMarker = null;
+        shown.forEach(function (p) {
+          var inPacket = !!packetIds[p.id];
+          var marker = L.marker([p.lat, p.lon], {
+            icon: markerIcon(p, inPacket),
+            title: priorityLabel(p) + " in " + p.county + " County"
+          });
+          marker.bindTooltip(markerTooltip(p, inPacket), {
+            className: "pole-tooltip",
+            direction: "top",
+            offset: [0, -8]
+          });
+          marker.bindPopup(markerPopup(p), {
+            maxWidth: 250,
+            closeButton: true
+          });
+          marker.on("click", function () {
+            state.selectedId = p.id;
+            render();
+          });
+          marker.addTo(realMap.layer);
+          if (p.id === state.selectedId) selectedMarker = marker;
+        });
+
+        var focus = packets.slice();
+        if (selected && !focus.some(function (p) { return p.id === selected.id; })) focus.push(selected);
+        if (focus.length) {
+          realMap.map.fitBounds(L.latLngBounds(focus.map(function (p) { return [p.lat, p.lon]; })), {
+            padding: [34, 34],
+            maxZoom: 10
+          });
+        }
+        realMap.map.invalidateSize();
+        if (selectedMarker) selectedMarker.openPopup();
+      }
+
+      function updateRealMap(rows, packets) {
+        realMap.rows = rows;
+        realMap.packets = packets;
+        if (state.evidenceView !== "map" || realMap.error) return;
+        initRealMap();
+        if (realMap.ready) refreshRealMap();
+      }
+
       var THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
       var depth = {
         loading: false,
@@ -2491,6 +2801,7 @@
       function drawMap(rows, packets) {
         var svg = els.map;
         drawBaseMap(svg);
+        updateRealMap(rows, packets);
         var ink = cssVar("--ink", "#edf5ee");
         var blue = cssVar("--blue", "#57a9dc");
         var violet = cssVar("--violet", "#9c83e8");
@@ -2609,7 +2920,8 @@
           '<div class="receipt-card">' +
             '<div class="receipt-top">' +
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
-              '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Receipt hash ' + esc(p.hash) + '</p>' +
+              '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Near ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
+              locationActions(p) +
               '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
             '</div>' +
             '<div class="receipt-body">' +
@@ -2693,6 +3005,7 @@
         els.footer.innerHTML = '<strong>Provenance.</strong> Deterministic synthetic DTE-style pole fleet generated locally: ' +
           POLES.length.toLocaleString("en-US") + ' poles across ' + COUNTIES.length +
           ' Southeast Michigan counties. Public-data proxies are named per receipt; resident and crew reports are overlays only, never model training inputs. ' +
+          'Map context uses OpenStreetMap tiles; Google Maps and Street View links open nearby coordinate context in a new tab. ' +
           '<strong>Validation-ready label.</strong> KPI values are synthetic-demo estimates until checked against real DTE inspection, outage, and work-order outcomes. Generated 2026-05-16.';
       }
 
