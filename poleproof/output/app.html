@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-accent="blue" data-density="comfortable" data-screen="overview" data-evidence-view="map">
+<html lang="en" data-theme="light" data-accent="blue" data-density="comfortable" data-screen="work">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1171,10 +1171,6 @@
       background: var(--panel);
     }
 
-    :root:not([data-screen="overview"]) .kpis {
-      display: none;
-    }
-
     .kpi {
       position: relative;
       min-height: 104px;
@@ -1239,8 +1235,6 @@
 
     :root[data-screen="map"] .worklist,
     :root[data-screen="map"] .receipt-header,
-    :root[data-screen="work"] .field-visuals,
-    :root[data-screen="work"] .view-tabs,
     :root[data-screen="audit"] [data-panel-section="work"],
     :root[data-screen="work"] [data-panel-section="audit"] {
       display: none;
@@ -1400,95 +1394,7 @@
     }
 
     .field-visuals {
-      display: grid;
-      grid-template-columns: minmax(260px, 0.42fr) minmax(360px, 0.58fr);
-      gap: 12px;
-      align-items: stretch;
-    }
-
-    .depth-scene {
-      position: relative;
-      height: min(42vh, 430px);
-      min-height: 360px;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 68% 18%, rgba(69, 137, 255, 0.22), transparent 34%),
-        linear-gradient(180deg, #07100d 0%, #12231b 58%, #07100d 100%);
-      isolation: isolate;
-    }
-
-    .depth-scene::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
-      opacity: 0.8;
-    }
-
-    #riskDepthCanvas {
-      position: absolute;
-      inset: 0;
       display: block;
-      width: 100%;
-      height: 100%;
-      min-height: 360px;
-      cursor: grab;
-    }
-
-    #riskDepthCanvas:active {
-      cursor: grabbing;
-    }
-
-    .depth-hud {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      right: 12px;
-      z-index: 2;
-      display: grid;
-      gap: 6px;
-      pointer-events: none;
-    }
-
-    .depth-hud strong {
-      width: max-content;
-      max-width: 100%;
-      padding: 5px 7px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      color: #f4f4f4;
-      background: rgba(5, 7, 11, 0.72);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .depth-hud div {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .depth-hud span,
-    .depth-fallback {
-      width: max-content;
-      max-width: 100%;
-      padding: 4px 7px;
-      border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-      border-radius: var(--radius);
-      color: #d7e2d9;
-      background: rgba(5, 7, 11, 0.68);
-      font-size: 10px;
-      font-weight: 850;
-      text-transform: uppercase;
-    }
-
-    .depth-fallback {
-      position: absolute;
-      left: 12px;
-      bottom: 12px;
-      z-index: 3;
     }
 
     .legend {
@@ -1840,46 +1746,15 @@
       justify-items: end;
     }
 
-    .view-tabs {
-      display: inline-grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      padding: 4px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--panel-2);
-    }
-
-    .view-tabs .chip {
-      min-height: 32px;
-      min-width: 112px;
-      border-color: transparent;
-      background: transparent;
-      color: var(--muted);
-    }
-
-    .view-tabs .chip.active {
-      color: #06100c;
-      background: var(--accent);
-    }
-
     .field-visuals {
       display: block;
     }
 
-    .field-visuals .map-shell,
-    .field-visuals .depth-scene {
+    .field-visuals .map-shell {
       margin-top: 12px;
     }
 
-    :root[data-evidence-view="map"] .depth-scene,
-    :root[data-evidence-view="depth"] .map-shell {
-      display: none;
-    }
-
-    .map-shell,
-    .depth-scene,
-    #riskDepthCanvas {
+    .map-shell {
       min-height: 430px;
     }
 
@@ -1982,15 +1857,14 @@
       }
 
       .kpis {
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
       }
 
-      .view-tabs {
-        width: 100%;
-      }
-
-      .view-tabs .chip {
-        min-width: 0;
+      .kpi {
+        min-width: 168px;
+        scroll-snap-align: start;
       }
 
       .kpi {
@@ -2012,6 +1886,14 @@
       .receipt {
         order: initial;
         grid-row: auto;
+      }
+
+      :root[data-screen="work"] .field {
+        order: 1;
+      }
+
+      :root[data-screen="work"] .controls {
+        order: 2;
       }
 
       .overview-grid {
@@ -2080,19 +1962,6 @@
 
       #realMap {
         min-height: 320px;
-      }
-
-      .depth-scene,
-      #riskDepthCanvas {
-        min-height: 320px;
-      }
-
-      :root[data-screen="map"] .field-title {
-        display: none;
-      }
-
-      :root[data-screen="map"] .field-wrap {
-        padding-top: 12px;
       }
 
       .bottom-tabs {
@@ -2346,11 +2215,10 @@
     .overview-card,
     .receipt-card,
     .worklist,
-    .map-shell,
-    .depth-scene,
-    .score-box,
-    .street-context-note,
-    .empty,
+      .map-shell,
+      .score-box,
+      .street-context-note,
+      .empty,
     .audit li {
       border-color: var(--line);
       border-radius: var(--radius);
@@ -2658,232 +2526,6 @@
       }
     }
 
-    :root[data-screen="map"] .shell {
-      height: var(--map-screen-h, calc(100dvh - 168px));
-      min-height: 460px;
-    }
-
-    :root[data-screen="map"] .field,
-    :root[data-screen="map"] .field-wrap {
-      min-height: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    :root[data-screen="map"] .field-wrap {
-      display: flex;
-      flex-direction: column;
-      padding: 0;
-    }
-
-    :root[data-screen="map"] .field-title {
-      margin: 0;
-      padding: 14px 20px;
-      border-bottom: 1px solid var(--line);
-      background: var(--panel);
-    }
-
-    :root[data-screen="map"] .field-visuals {
-      flex: 1;
-      min-height: 0;
-      display: block;
-    }
-
-    :root[data-screen="map"] .map-shell,
-    :root[data-screen="map"] .depth-scene,
-    :root[data-screen="map"] #riskDepthCanvas,
-    :root[data-screen="map"] #realMap,
-    :root[data-screen="map"] #map {
-      height: 100%;
-      min-height: 0;
-    }
-
-    :root[data-screen="map"] .map-shell {
-      border: 0;
-      border-radius: 0;
-    }
-
-    :root[data-screen="map"] .depth-scene {
-      background:
-        radial-gradient(circle at 68% 18%, rgba(69, 137, 255, 0.22), transparent 34%),
-        linear-gradient(180deg, #07100d 0%, #12231b 58%, #07100d 100%);
-    }
-
-    @media (max-width: 560px) {
-      :root[data-screen="map"] body {
-        padding-bottom: 0;
-      }
-
-      :root[data-screen="map"] .shell {
-        min-height: 420px;
-      }
-
-      :root[data-screen="map"] .field-title {
-        padding: 12px 20px;
-      }
-    }
-
-    .poleview-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 5600;
-      display: grid;
-      place-items: center;
-      padding: 18px;
-      color: #f4f4f4;
-      background: rgba(0, 0, 0, 0.76);
-      backdrop-filter: blur(5px);
-    }
-
-    .poleview-dialog {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      width: min(1180px, 100%);
-      height: min(760px, calc(100dvh - 36px));
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 8px;
-      background: #05070b;
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
-    }
-
-    .poleview-stage {
-      position: relative;
-      min-height: 0;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 22%, rgba(120, 169, 255, 0.18), transparent 36%),
-        linear-gradient(180deg, #17202a 0%, #61747a 44%, #182018 45%, #070908 100%);
-    }
-
-    #poleViewCanvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    .poleview-caption {
-      position: absolute;
-      left: 16px;
-      bottom: 16px;
-      max-width: min(520px, calc(100% - 32px));
-      padding: 9px 11px;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 6px;
-      color: #f4f4f4;
-      background: rgba(5, 7, 11, 0.72);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    .poleview-panel {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      padding: 18px;
-      border-left: 1px solid rgba(255, 255, 255, 0.12);
-      background: #111318;
-    }
-
-    .poleview-close {
-      align-self: flex-end;
-      min-height: 32px;
-      padding: 0 10px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 0;
-      color: #f4f4f4;
-      background: #262626;
-      font-size: 12px;
-      font-weight: 650;
-    }
-
-    .poleview-kicker {
-      margin: 0;
-      color: #78a9ff;
-      font-size: 11px;
-      font-weight: 750;
-      text-transform: uppercase;
-    }
-
-    .poleview-panel h2 {
-      margin: -8px 0 0;
-      font-size: 24px;
-      line-height: 1.05;
-    }
-
-    .poleview-panel p {
-      margin: 0;
-      color: #c6c6c6;
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .poleview-stats {
-      display: grid;
-      gap: 8px;
-      padding: 12px 0;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .poleview-stat {
-      display: grid;
-      grid-template-columns: 96px 1fr;
-      gap: 10px;
-      font-size: 12px;
-      line-height: 1.25;
-    }
-
-    .poleview-stat span {
-      color: #8d8d8d;
-      font-weight: 750;
-      text-transform: uppercase;
-    }
-
-    .poleview-stat strong {
-      color: #f4f4f4;
-    }
-
-    .poleview-actions {
-      display: grid;
-      gap: 8px;
-      margin-top: auto;
-    }
-
-    .poleview-actions .action-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 40px;
-      text-decoration: none;
-    }
-
-    @media (max-width: 760px) {
-      .poleview-overlay {
-        padding: 0;
-      }
-
-      .poleview-dialog {
-        grid-template-columns: 1fr;
-        width: 100%;
-        height: 100dvh;
-        border: 0;
-        border-radius: 0;
-      }
-
-      .poleview-stage {
-        min-height: 0;
-      }
-
-      .poleview-panel {
-        max-height: 42dvh;
-        overflow: auto;
-        border-left: 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-      }
-    }
-
     @media print {
       .controls, .field, .top-actions { display: none; }
       .topbar, .receipt { color: #000; background: #fff; }
@@ -2904,7 +2546,7 @@
         <span>Command</span><kbd>Cmd</kbd><kbd>K</kbd>
       </button>
       <span class="pill">No proprietary inputs</span>
-      <span class="pill">Synthetic demo · validation-ready</span>
+      <span class="pill">Audit-ready receipts</span>
     </div>
   </header>
 
@@ -2914,9 +2556,9 @@
 
   <section class="screen-summary" aria-live="polite">
     <div>
-      <span class="screen-kicker" id="screenKicker">Overview</span>
-      <h2 id="screenTitle">Resident-ready pole risk overview</h2>
-      <p id="screenBlurb">A plain-language entry point before crews, judges, or residents open deeper evidence.</p>
+      <span class="screen-kicker" id="screenKicker">Field</span>
+      <h2 id="screenTitle">Michigan field prioritization</h2>
+      <p id="screenBlurb">Map-based crew prioritization with filters, ranked work packets, and receipt-backed decisions.</p>
     </div>
     <div class="screen-action" id="screenAction"></div>
   </section>
@@ -2966,7 +2608,7 @@
       </details>
 
       <details class="section disclosure" data-panel-section="audit">
-        <summary><span>Display</span><small>theme, density, 3D</small></summary>
+        <summary><span>Display</span><small>theme, density</small></summary>
         <label>Theme</label>
         <div class="segmented" id="themeControls"></div>
         <label>Density</label>
@@ -3000,16 +2642,15 @@
       </details>
     </aside>
 
-    <main class="panel field screen-panel" data-screen-panel="map work" aria-label="Evidence field and worklist">
+    <main class="panel field screen-panel" data-screen-panel="work" aria-label="Evidence field and worklist">
       <div class="field-wrap">
         <div class="field-title">
           <div>
             <h2>Evidence field</h2>
-            <p id="fieldSubtitle">Real Michigan map with statewide pole work packets, receipt-level evidence, and nearby Street View handoff.</p>
+            <p id="fieldSubtitle">Real Michigan map with statewide pole work packets, receipt-level evidence, and ranked crew priorities.</p>
             <div class="field-meta" id="fieldMeta"></div>
           </div>
           <div class="field-tools">
-            <div class="view-tabs" id="viewControls" aria-label="Evidence view"></div>
             <div class="legend">
               <span><i class="dot" style="background: var(--red)"></i>Critical</span>
               <span><i class="dot" style="background: var(--amber)"></i>High</span>
@@ -3021,12 +2662,6 @@
         </div>
 
         <div class="field-visuals">
-          <section class="depth-scene" aria-label="3D risk relief">
-            <canvas id="riskDepthCanvas"></canvas>
-            <div class="depth-hud" id="depthHud"></div>
-            <div class="depth-fallback" id="depthFallback" hidden>3D risk layer unavailable</div>
-          </section>
-
           <div class="map-shell" id="mapShell">
             <div id="realMap" aria-label="Real map of Michigan pole work packets"></div>
             <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Michigan utility pole risk field"></svg>
@@ -3081,28 +2716,6 @@
       </div>
       <div class="command-list" id="commandList" role="listbox" aria-label="Available commands"></div>
     </div>
-  </div>
-
-  <div class="poleview-overlay" id="poleViewOverlay" hidden>
-    <section class="poleview-dialog" role="dialog" aria-modal="true" aria-labelledby="poleViewTitle">
-      <div class="poleview-stage">
-        <canvas id="poleViewCanvas"></canvas>
-        <div class="poleview-caption" id="poleViewCaption"></div>
-      </div>
-      <aside class="poleview-panel">
-        <button class="poleview-close" id="poleViewClose" type="button">Close</button>
-        <p class="poleview-kicker">Michigan PoleView</p>
-        <h2 id="poleViewTitle">Road-level pole view</h2>
-        <p id="poleViewSummary">Select a 3D risk column to dive into a pole-level view.</p>
-        <div class="poleview-stats" id="poleViewStats"></div>
-        <div class="poleview-actions">
-          <button class="action-btn secondary" id="poleViewPrev" type="button">Previous pole</button>
-          <button class="action-btn secondary" id="poleViewNext" type="button">Next pole</button>
-          <a class="action-btn secondary" id="poleViewMaps" target="_blank" rel="noopener">Open pole estimate</a>
-          <a class="action-btn" id="poleViewStreet" target="_blank" rel="noopener">Open road Street View</a>
-        </div>
-      </aside>
-    </section>
   </div>
 
   <script>
@@ -3296,15 +2909,12 @@
       ];
 
       var SCREENS = [
-        { id: "overview", label: "Overview", title: "Resident-ready pole risk overview", blurb: "Plain-language status before crews, judges, or residents open deeper evidence.", primary: "Review selected receipt", command: "receipt" },
-        { id: "map", label: "Map", title: "Real Michigan map context", blurb: "See where work packets sit and open road-level Google Street View context.", primary: "Open road Street View", command: "street" },
-        { id: "work", label: "Packets", title: "Prioritized work packets", blurb: "Tune the inspection budget and review the ranked crew list without extra audit controls in the way.", primary: "Export work packets CSV", command: "csv" },
-        { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Review the evidence, expected risk drop, and crew packet for the active pole.", primary: "Export selected receipt JSON", command: "json" },
-        { id: "audit", label: "Audit", title: "Guardrails and source manifest", blurb: "Inspect validation rules, display preferences, and named source inputs.", primary: "Print receipt", command: "print" }
+        { id: "work", label: "Field", title: "Michigan field prioritization", blurb: "Map-based crew prioritization with filters, ranked work packets, and receipt-backed decisions.", primary: "Export work packets CSV", command: "csv" },
+        { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Evidence drivers, expected risk drop, crew packet, guardrails, and source manifest for the active pole.", primary: "Export selected receipt JSON", command: "json" }
       ];
 
       var state = {
-        screen: new URLSearchParams(window.location.search).get("screen") || "overview",
+        screen: new URLSearchParams(window.location.search).get("screen") || "work",
         objective: "outage",
         tier: "all",
         county: "All counties",
@@ -3316,13 +2926,12 @@
         theme: "light",
         density: "comfortable",
         accent: "blue",
-        evidenceView: new URLSearchParams(window.location.search).get("view") === "depth" ? "depth" : "map",
         showAlerts: false,
         selectedId: null
       };
 
       if (!SCREENS.some(function (screen) { return screen.id === state.screen; })) {
-        state.screen = "overview";
+        state.screen = "work";
       }
 
       var els = {
@@ -3335,17 +2944,6 @@
         commandOverlay: document.getElementById("commandOverlay"),
         commandSearch: document.getElementById("commandSearch"),
         commandList: document.getElementById("commandList"),
-        poleViewOverlay: document.getElementById("poleViewOverlay"),
-        poleViewCanvas: document.getElementById("poleViewCanvas"),
-        poleViewCaption: document.getElementById("poleViewCaption"),
-        poleViewClose: document.getElementById("poleViewClose"),
-        poleViewTitle: document.getElementById("poleViewTitle"),
-        poleViewSummary: document.getElementById("poleViewSummary"),
-        poleViewStats: document.getElementById("poleViewStats"),
-        poleViewPrev: document.getElementById("poleViewPrev"),
-        poleViewNext: document.getElementById("poleViewNext"),
-        poleViewMaps: document.getElementById("poleViewMaps"),
-        poleViewStreet: document.getElementById("poleViewStreet"),
         screenKicker: document.getElementById("screenKicker"),
         screenTitle: document.getElementById("screenTitle"),
         screenBlurb: document.getElementById("screenBlurb"),
@@ -3366,11 +2964,7 @@
         themeControls: document.getElementById("themeControls"),
         densityControls: document.getElementById("densityControls"),
         accentControls: document.getElementById("accentControls"),
-        viewControls: document.getElementById("viewControls"),
         showAlerts: document.getElementById("showAlerts"),
-        depthCanvas: document.getElementById("riskDepthCanvas"),
-        depthHud: document.getElementById("depthHud"),
-        depthFallback: document.getElementById("depthFallback"),
         mapShell: document.getElementById("mapShell"),
         realMap: document.getElementById("realMap"),
         map: document.getElementById("map"),
@@ -3623,7 +3217,7 @@
         state.screen = id;
         var url = new URL(window.location.href);
         url.searchParams.set("screen", id);
-        if (id === "map") url.searchParams.set("view", state.evidenceView);
+        url.searchParams.delete("view");
         window.history.replaceState(null, "", url.pathname + url.search + url.hash);
         render();
       }
@@ -3690,7 +3284,7 @@
                 '<div class="overview-row"><span>Selected</span><strong>' + esc(selectedLabel) + '</strong></div>' +
                 '<div class="overview-row"><span>Next step</span><strong>' + esc(nextAction) + '</strong></div>' +
                 '<div class="overview-row"><span>Pole est.</span><strong>' + (selected ? esc(coordinateText(selected)) : "No location") + '</strong></div>' +
-                '<div class="overview-row"><span>Street View</span><strong>' + (selected ? esc(streetContextLabel(selected)) : "No road context") + '</strong></div>' +
+                '<div class="overview-row"><span>Road anchor</span><strong>' + (selected ? esc(streetContextLabel(selected)) : "No road context") + '</strong></div>' +
               '</div>' +
             '</div>' +
             '<div class="overview-card">' +
@@ -3743,13 +3337,12 @@
         var capture = atRisk.length ? captured.length / atRisk.length : 0;
         var baseline = rows.length ? Math.min(1, packets.length / rows.length) : 0;
         var lift = baseline ? capture / baseline : 0;
-        var budgetShare = rows.length ? packets.length / rows.length : 0;
         var kpis = [
-          ["Capture @ budget", pct1(capture), packets.length.toLocaleString("en-US") + " packets / " + pct1(budgetShare) + " of visible fleet", capture],
-          ["Lift vs age-cycle", lift.toFixed(2) + "x", "synthetic baseline using same inspection budget", clamp(lift / 5, 0.08, 1)],
+          ["Lift vs age-cycle", lift.toFixed(2) + "x", "same inspection budget, risk-first order", clamp(lift / 5, 0.08, 1)],
           ["Net benefit / cycle", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes", clamp(dollars / 1800000, 0.08, 1)],
           ["Audit-ready receipts", pct(auditReady), "source-complete, high-confidence crew packets", auditReady],
-          ["Validation status", "Synthetic", "ready for DTE holdout labels and pilot scoring", 0.32]
+          ["Receipt coverage", rows.length.toLocaleString("en-US"), "visible pole decisions across Michigan", clamp(rows.length / POLE_COUNT, 0.08, 1)],
+          ["Crew packets", packets.length.toLocaleString("en-US"), "ranked packets ready for dispatch review", clamp(packets.length / 340, 0.08, 1)]
         ];
         els.kpis.innerHTML = kpis.map(function (k) {
           return '<div class="kpi"><span>' + esc(k[0]) + '</span><strong>' + esc(k[1]) +
@@ -3788,7 +3381,6 @@
         document.documentElement.dataset.theme = state.theme;
         document.documentElement.dataset.density = state.density;
         document.documentElement.dataset.accent = state.accent;
-        document.documentElement.dataset.evidenceView = state.evidenceView;
       }
 
       function buttonGroup(el, items, current, attr, onPick) {
@@ -3819,13 +3411,6 @@
           { id: "amber", label: "Work" }
         ], state.accent, "accent", function (id) { state.accent = id; });
         els.showAlerts.checked = state.showAlerts;
-      }
-
-      function renderViewControls() {
-        buttonGroup(els.viewControls, [
-          { id: "map", label: "Map" },
-          { id: "depth", label: "3D relief" }
-        ], state.evidenceView, "view", function (id) { state.evidenceView = id; });
       }
 
       function renderOpsBanner(rows, packets) {
@@ -3861,10 +3446,6 @@
 
       var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       var OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-      var SATELLITE_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-      var SATELLITE_ZOOM = 7;
-      var DEPTH_TERRAIN_WIDTH = 28;
-      var DEPTH_TERRAIN_DEPTH = 20;
       var realMap = {
         loading: false,
         ready: false,
@@ -3897,12 +3478,6 @@
         return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.lat + "," + p.lon);
       }
 
-      function streetViewUrl(p) {
-        var ctx = streetContext(p);
-        return "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" +
-          encodeURIComponent(ctx.lat + "," + ctx.lon) + "&heading=" + encodeURIComponent(ctx.heading || 0) + "&pitch=0&fov=80";
-      }
-
       function priorityLabel(p) {
         if (p.tier === "critical") return "Fix first";
         if (p.tier === "high") return "Needs attention";
@@ -3912,182 +3487,8 @@
 
       function locationActions(p) {
         return '<div class="location-actions">' +
-          '<a class="map-link secondary" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open pole estimate</a>' +
-          '<a class="map-link primary" href="' + esc(streetViewUrl(p)) + '" target="_blank" rel="noopener">Open road Street View</a>' +
+          '<a class="map-link primary" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open pole estimate in Google Maps</a>' +
         '</div>';
-      }
-
-      function distanceSq(a, b) {
-        return Math.pow(a.lat - b.lat, 2) + Math.pow((a.lon - b.lon) * 0.72, 2);
-      }
-
-      function routePolesFor(p) {
-        return POLES.filter(function (q) { return q.county === p.county; }).sort(function (a, b) {
-          return (a.lat + a.lon * 0.18) - (b.lat + b.lon * 0.18);
-        });
-      }
-
-      function neighborPole(p, direction) {
-        var route = routePolesFor(p);
-        var index = route.findIndex(function (q) { return q.id === p.id; });
-        if (index < 0 || !route.length) return p;
-        return route[(index + direction + route.length) % route.length];
-      }
-
-      function drawPoleSilhouette(ctx, x, baseY, scale, lean, color, accent) {
-        ctx.save();
-        ctx.translate(x, baseY);
-        ctx.rotate(lean);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = Math.max(3, 8 * scale);
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -190 * scale);
-        ctx.stroke();
-        ctx.lineWidth = Math.max(2, 4 * scale);
-        ctx.beginPath();
-        ctx.moveTo(-44 * scale, -154 * scale);
-        ctx.lineTo(44 * scale, -154 * scale);
-        ctx.stroke();
-        ctx.fillStyle = accent;
-        ctx.beginPath();
-        ctx.arc(-36 * scale, -154 * scale, 7 * scale, 0, Math.PI * 2);
-        ctx.arc(36 * scale, -154 * scale, 7 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      function drawPoleView(p) {
-        if (!p || !els.poleViewCanvas) return;
-        var canvas = els.poleViewCanvas;
-        var box = canvas.getBoundingClientRect();
-        var dpr = Math.min(window.devicePixelRatio || 1, 2);
-        var w = Math.max(1, Math.floor(box.width * dpr));
-        var h = Math.max(1, Math.floor(box.height * dpr));
-        if (canvas.width !== w || canvas.height !== h) {
-          canvas.width = w;
-          canvas.height = h;
-        }
-        var ctx = canvas.getContext("2d");
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        w = box.width;
-        h = box.height;
-        var sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
-        sky.addColorStop(0, "#9fc8df");
-        sky.addColorStop(0.58, "#d6e7ee");
-        sky.addColorStop(1, "#f4f6f2");
-        ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, w, h);
-
-        var horizon = h * 0.43;
-        var area = countyAreaFor(p.county);
-        ctx.fillStyle = area.zone === "urban" ? "#6f766f" : area.zone === "up" || area.zone === "north" ? "#284d2d" : "#426b39";
-        ctx.fillRect(0, horizon, w, h * 0.18);
-        for (var i = 0; i < 28; i++) {
-          var tx = (i * 97 + p.id.charCodeAt(2) * 13) % w;
-          var th = 28 + ((i * 31) % 56);
-          ctx.fillStyle = area.zone === "urban" ? "rgba(70, 76, 72, 0.65)" : "rgba(26, 70, 35, 0.72)";
-          ctx.fillRect(tx, horizon - th, 18 + (i % 5) * 8, th);
-        }
-
-        var roadTop = horizon + h * 0.08;
-        ctx.fillStyle = "#343a3e";
-        ctx.beginPath();
-        ctx.moveTo(w * 0.36, roadTop);
-        ctx.lineTo(w * 0.64, roadTop);
-        ctx.lineTo(w * 0.88, h);
-        ctx.lineTo(w * 0.12, h);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = "#aeb6af";
-        ctx.beginPath();
-        ctx.moveTo(w * 0.30, roadTop);
-        ctx.lineTo(w * 0.36, roadTop);
-        ctx.lineTo(w * 0.12, h);
-        ctx.lineTo(0, h);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(w * 0.64, roadTop);
-        ctx.lineTo(w * 0.70, roadTop);
-        ctx.lineTo(w, h);
-        ctx.lineTo(w * 0.88, h);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.62)";
-        ctx.lineWidth = 4;
-        ctx.setLineDash([24, 22]);
-        ctx.beginPath();
-        ctx.moveTo(w * 0.5, roadTop + 12);
-        ctx.lineTo(w * 0.5, h);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        var leanDriver = p.drivers.find(function (d) { return d.key === "lean"; });
-        var lean = leanDriver ? clamp(leanDriver.weight / 0.26, 0, 1) * 0.12 : 0.02;
-        drawPoleSilhouette(ctx, w * 0.78, h * 0.87, Math.min(1.2, Math.max(0.84, h / 680)), -lean, "#3a2b20", colorForTier(p.tier));
-        drawPoleSilhouette(ctx, w * 0.30, h * 0.68, 0.48, 0.02, "#453528", "rgba(241,194,27,0.82)");
-        drawPoleSilhouette(ctx, w * 0.62, h * 0.55, 0.34, -0.01, "#453528", "rgba(241,194,27,0.82)");
-
-        ctx.strokeStyle = "rgba(38, 32, 27, 0.86)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(w * 0.78 - 44, h * 0.87 - 156);
-        ctx.bezierCurveTo(w * 0.58, h * 0.35, w * 0.43, h * 0.36, w * 0.30 - 20, h * 0.68 - 72);
-        ctx.moveTo(w * 0.78 + 44, h * 0.87 - 156);
-        ctx.bezierCurveTo(w * 0.68, h * 0.35, w * 0.62, h * 0.37, w * 0.62 + 16, h * 0.55 - 54);
-        ctx.stroke();
-
-        ctx.fillStyle = "rgba(5,7,11,0.72)";
-        ctx.fillRect(20, 20, Math.min(360, w - 40), 92);
-        ctx.fillStyle = "#f4f4f4";
-        ctx.font = "700 18px system-ui, sans-serif";
-        ctx.fillText(p.id + " / " + priorityLabel(p), 36, 50);
-        ctx.font = "600 13px system-ui, sans-serif";
-        ctx.fillText(p.county + " County / " + p.action, 36, 75);
-        ctx.fillText("Risk " + pct1(p.risk) + " / confidence " + pct1(p.confidence), 36, 98);
-        ctx.restore();
-
-        els.poleViewCaption.textContent = "Digital pole view built from the selected pole receipt, road anchor, and statewide map context. Use Google Street View when imagery exists; use PoleView when it does not.";
-      }
-
-      function renderPoleViewPanel(p) {
-        var ctx = streetContext(p);
-        els.poleViewTitle.textContent = p.id + " in " + p.county + " County";
-        els.poleViewSummary.textContent = priorityLabel(p) + " / " + p.action + ". Road anchor: " + ctx.label + ".";
-        els.poleViewStats.innerHTML =
-          '<div class="poleview-stat"><span>Risk</span><strong>' + pct1(p.risk) + ' / ' + esc(p.tier) + '</strong></div>' +
-          '<div class="poleview-stat"><span>Receipt</span><strong>' + esc(p.receipt) + '</strong></div>' +
-          '<div class="poleview-stat"><span>Pole est.</span><strong>' + esc(coordinateText(p)) + '</strong></div>' +
-          '<div class="poleview-stat"><span>Road view</span><strong>' + esc(streetContextLabel(p)) + '</strong></div>' +
-          '<div class="poleview-stat"><span>Top driver</span><strong>' + esc(p.drivers[0].label) + '</strong></div>';
-        els.poleViewMaps.href = googleMapsUrl(p);
-        els.poleViewStreet.href = streetViewUrl(p);
-      }
-
-      function openPoleView(p) {
-        if (!p) return;
-        state.selectedId = p.id;
-        els.poleViewOverlay.hidden = false;
-        renderPoleViewPanel(p);
-        requestAnimationFrame(function () { drawPoleView(p); });
-      }
-
-      function closePoleView() {
-        els.poleViewOverlay.hidden = true;
-      }
-
-      function movePoleView(direction) {
-        var current = selectedPole();
-        if (!current) return;
-        var next = neighborPole(current, direction);
-        state.selectedId = next.id;
-        renderPoleViewPanel(next);
-        drawPoleView(next);
-        renderReceipt(next);
-        updateDepthScene(depth.rows, depth.packets);
       }
 
       var commandState = {
@@ -4102,22 +3503,14 @@
       function commandItems() {
         var selected = selectedPole();
         return [
-          { id: "overview", label: "Go to Overview", group: "Screen", run: function () { setScreen("overview"); } },
-          { id: "map", label: "Go to Map", group: "Screen", run: function () { setScreen("map"); } },
-          { id: "work", label: "Go to Work Packets", group: "Screen", run: function () { setScreen("work"); } },
+          { id: "work", label: "Go to Field", group: "Screen", run: function () { setScreen("work"); } },
           { id: "receipt", label: "Go to Receipt", group: "Screen", run: function () { setScreen("receipt"); } },
-          { id: "audit", label: "Go to Audit", group: "Screen", run: function () { setScreen("audit"); } },
-          { id: "poleview", label: "Open Michigan PoleView", group: "Location", run: function () { if (selected) openPoleView(selected); } },
-          { id: "street", label: "Open road Street View", group: "Location", run: function () { if (selected) openExternal(streetViewUrl(selected)); } },
           { id: "google", label: "Open pole estimate in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
           { id: "csv", label: "Export work packets CSV", group: "Export", run: exportCsv },
           { id: "json", label: "Export selected receipt JSON", group: "Export", run: exportJson },
           { id: "print", label: "Print receipt", group: "Export", run: function () { window.print(); } },
-          { id: "depth", label: "Show 3D relief", group: "View", run: function () { state.evidenceView = "depth"; setScreen("map"); } },
-          { id: "streetmap", label: "Show real map", group: "View", run: function () { state.evidenceView = "map"; setScreen("map"); } },
           { id: "county", label: "Change county filter", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.county.focus(); }, 0); } },
-          { id: "budget", label: "Change inspection budget", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.budget.focus(); }, 0); } },
-          { id: "guardrails", label: "Review guardrails", group: "Audit", run: function () { setScreen("audit"); } }
+          { id: "budget", label: "Change inspection budget", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.budget.focus(); }, 0); } }
         ];
       }
 
@@ -4183,7 +3576,7 @@
           '<strong>' + esc(priorityLabel(p)) + ' in ' + esc(p.county) + ' County</strong>' +
           '<span>' + esc(p.receipt) + ' / ' + esc(p.action) + '</span>' +
           '<span>Pole estimate: ' + esc(coordinateText(p)) + '</span>' +
-          '<span>Street View road: ' + esc(streetContextLabel(p)) + '</span>' +
+          '<span>Road anchor: ' + esc(streetContextLabel(p)) + '</span>' +
           locationActions(p) +
         '</div>';
       }
@@ -4292,12 +3685,12 @@
           if (p.id === state.selectedId) selectedMarker = marker;
         });
 
-        var focus = state.county === "All counties" && state.screen === "map" ? shown.slice() : packets.slice();
+        var focus = state.county === "All counties" ? shown.slice() : packets.slice();
         if (selected && !focus.some(function (p) { return p.id === selected.id; })) focus.push(selected);
         if (focus.length) {
           realMap.map.fitBounds(L.latLngBounds(focus.map(function (p) { return [p.lat, p.lon]; })), {
             padding: [34, 34],
-            maxZoom: state.county === "All counties" && state.screen === "map" ? 7 : 10
+            maxZoom: state.county === "All counties" ? 7 : 10
           });
         }
         realMap.map.invalidateSize();
@@ -4307,402 +3700,9 @@
       function updateRealMap(rows, packets) {
         realMap.rows = rows;
         realMap.packets = packets;
-        if (state.evidenceView !== "map" || realMap.error) return;
+        if (realMap.error) return;
         initRealMap();
         if (realMap.ready) refreshRealMap();
-      }
-
-      var THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-      var depth = {
-        loading: false,
-        ready: false,
-        error: false,
-        imageryLoading: false,
-        imageryReady: false,
-        imageryError: false,
-        rows: [],
-        packets: [],
-        visiblePoles: [],
-        yaw: -0.32,
-        pitch: -0.10,
-        targetYaw: -0.32,
-        dragging: false,
-        moved: false,
-        lastX: 0,
-        downX: 0,
-        downY: 0,
-        scene: null,
-        camera: null,
-        renderer: null,
-        group: null,
-        terrain: null,
-        terrainMaterial: null,
-        mapTexture: null,
-        columns: null,
-        tips: null,
-        selectedMast: null,
-        selectedRing: null,
-        raycaster: null,
-        resizeObserver: null,
-        THREE: null
-      };
-
-      function renderDepthHud(rows, packets) {
-        var selected = selectedPole();
-        var critical = packets.filter(function (p) { return p.tier === "critical"; }).length;
-        var peak = packets.reduce(function (best, p) { return !best || p.risk > best.risk ? p : best; }, null);
-        els.depthHud.innerHTML =
-          '<strong>3D satellite risk relief</strong><div>' +
-          '<span>Earth imagery base</span>' +
-          '<span>click a column to dive</span>' +
-          '<span>' + packets.length + ' active columns</span>' +
-          '<span>' + critical + ' critical peaks</span>' +
-          '<span>peak ' + esc(peak ? peak.county : "none") + ' ' + (peak ? pct1(peak.risk) : "0.0%") + '</span>' +
-          '<span>selected ' + esc(selected ? selected.id : "none") + '</span>' +
-          '</div>';
-      }
-
-      function point3d(p) {
-        return {
-          x: (normalizedLon(p.lon) - 0.5) * (DEPTH_TERRAIN_WIDTH - 2),
-          z: -((normalizedLat(p.lat) - 0.5) * (DEPTH_TERRAIN_DEPTH - 2)),
-          y: 0.08 + p.risk * 2.9 + p.criticality * 0.45
-        };
-      }
-
-      function lonToTileFloat(lon, zoom) {
-        return (lon + 180) / 360 * Math.pow(2, zoom);
-      }
-
-      function latToTileFloat(lat, zoom) {
-        var rad = lat * Math.PI / 180;
-        return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, zoom);
-      }
-
-      function satelliteTileUrl(z, x, y) {
-        return SATELLITE_TILE_URL.replace("{z}", z).replace("{x}", x).replace("{y}", y);
-      }
-
-      function loadSatelliteImage(src) {
-        return new Promise(function (resolve, reject) {
-          var img = new Image();
-          img.crossOrigin = "anonymous";
-          img.decoding = "async";
-          img.onload = function () { resolve(img); };
-          img.onerror = reject;
-          img.src = src;
-        });
-      }
-
-      function buildSatelliteTexture(THREE) {
-        if (depth.imageryReady || depth.imageryLoading || depth.mapTexture) return;
-        depth.imageryLoading = true;
-        var z = SATELLITE_ZOOM;
-        var tileSize = 256;
-        var minTileX = Math.floor(lonToTileFloat(MAP_BOUNDS.minLon, z));
-        var maxTileX = Math.floor(lonToTileFloat(MAP_BOUNDS.maxLon, z));
-        var minTileY = Math.floor(latToTileFloat(MAP_BOUNDS.maxLat, z));
-        var maxTileY = Math.floor(latToTileFloat(MAP_BOUNDS.minLat, z));
-        var tileCanvas = document.createElement("canvas");
-        var tileW = (maxTileX - minTileX + 1) * tileSize;
-        var tileH = (maxTileY - minTileY + 1) * tileSize;
-        tileCanvas.width = tileW;
-        tileCanvas.height = tileH;
-        var tileCtx = tileCanvas.getContext("2d");
-        tileCtx.fillStyle = "#13251b";
-        tileCtx.fillRect(0, 0, tileW, tileH);
-        var jobs = [];
-        for (var x = minTileX; x <= maxTileX; x++) {
-          for (var y = minTileY; y <= maxTileY; y++) {
-            jobs.push((function (tx, ty) {
-              return loadSatelliteImage(satelliteTileUrl(z, tx, ty)).then(function (img) {
-                tileCtx.drawImage(img, (tx - minTileX) * tileSize, (ty - minTileY) * tileSize, tileSize, tileSize);
-              }).catch(function () {});
-            })(x, y));
-          }
-        }
-        Promise.all(jobs).then(function () {
-          var cropX = (lonToTileFloat(MAP_BOUNDS.minLon, z) - minTileX) * tileSize;
-          var cropY = (latToTileFloat(MAP_BOUNDS.maxLat, z) - minTileY) * tileSize;
-          var cropW = (lonToTileFloat(MAP_BOUNDS.maxLon, z) - lonToTileFloat(MAP_BOUNDS.minLon, z)) * tileSize;
-          var cropH = (latToTileFloat(MAP_BOUNDS.minLat, z) - latToTileFloat(MAP_BOUNDS.maxLat, z)) * tileSize;
-          var canvas = document.createElement("canvas");
-          canvas.width = 1024;
-          canvas.height = 768;
-          var ctx = canvas.getContext("2d");
-          ctx.drawImage(tileCanvas, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
-          var shade = ctx.createLinearGradient(0, 0, 0, canvas.height);
-          shade.addColorStop(0, "rgba(4, 8, 8, 0.08)");
-          shade.addColorStop(0.56, "rgba(4, 8, 8, 0.00)");
-          shade.addColorStop(1, "rgba(4, 8, 8, 0.20)");
-          ctx.fillStyle = shade;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          var texture = new THREE.CanvasTexture(canvas);
-          texture.colorSpace = THREE.SRGBColorSpace;
-          texture.anisotropy = depth.renderer ? Math.min(8, depth.renderer.capabilities.getMaxAnisotropy()) : 4;
-          texture.needsUpdate = true;
-          depth.mapTexture = texture;
-          depth.imageryReady = true;
-          depth.imageryLoading = false;
-          applyDepthImagery();
-          updateDepthScene(depth.rows, depth.packets);
-        }).catch(function () {
-          depth.imageryLoading = false;
-          depth.imageryError = true;
-        });
-      }
-
-      function applyDepthImagery() {
-        if (!depth.terrainMaterial || !depth.mapTexture) return;
-        depth.terrainMaterial.map = depth.mapTexture;
-        depth.terrainMaterial.color.set(0xffffff);
-        depth.terrainMaterial.needsUpdate = true;
-      }
-
-      function pickDepthPole(e) {
-        if (!depth.ready || !depth.tips || !depth.visiblePoles.length) return;
-        var THREE = depth.THREE;
-        if (!depth.raycaster) depth.raycaster = new THREE.Raycaster();
-        depth.raycaster.params.Points.threshold = 0.38;
-        var rect = els.depthCanvas.getBoundingClientRect();
-        var mouse = new THREE.Vector2(
-          ((e.clientX - rect.left) / rect.width) * 2 - 1,
-          -(((e.clientY - rect.top) / rect.height) * 2 - 1)
-        );
-        depth.raycaster.setFromCamera(mouse, depth.camera);
-        var hits = depth.raycaster.intersectObject(depth.tips);
-        var p = hits.length && hits[0].index != null ? depth.visiblePoles[hits[0].index] : null;
-        if (!p) {
-          depth.group.updateMatrixWorld();
-          var best = null;
-          var bestDist = Infinity;
-          depth.visiblePoles.forEach(function (candidate) {
-            var pt = point3d(candidate);
-            var v = new THREE.Vector3(pt.x, pt.y, pt.z);
-            v.applyMatrix4(depth.group.matrixWorld).project(depth.camera);
-            var sx = (v.x * 0.5 + 0.5) * rect.width + rect.left;
-            var sy = (-v.y * 0.5 + 0.5) * rect.height + rect.top;
-            var d = Math.pow(sx - e.clientX, 2) + Math.pow(sy - e.clientY, 2);
-            if (d < bestDist) { bestDist = d; best = candidate; }
-          });
-          if (best && bestDist < 90 * 90) p = best;
-        }
-        if (!p) return;
-        state.selectedId = p.id;
-        render();
-        openPoleView(p);
-      }
-
-      function initDepthScene() {
-        if (depth.ready || depth.loading || depth.error || !els.depthCanvas) return;
-        depth.loading = true;
-        import(THREE_MODULE_URL).then(function (mod) {
-          var THREE = mod;
-          depth.THREE = THREE;
-          depth.renderer = new THREE.WebGLRenderer({
-            canvas: els.depthCanvas,
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance"
-          });
-          depth.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-          depth.renderer.setClearColor(0x000000, 0);
-          depth.scene = new THREE.Scene();
-          depth.camera = new THREE.OrthographicCamera(-15.5, 15.5, 12, -12, 0.1, 100);
-          depth.camera.position.set(10, 12, 16);
-          depth.camera.lookAt(0, 1.4, 0);
-          depth.group = new THREE.Group();
-          depth.scene.add(depth.group);
-
-          var ambient = new THREE.AmbientLight(0xffffff, 0.8);
-          var key = new THREE.DirectionalLight(0xffffff, 1.25);
-          key.position.set(-8, 14, 12);
-          var rim = new THREE.PointLight(hexForColor(cssVar("--blue", "#57a9dc")), 1.6, 42);
-          rim.position.set(10, 8, -8);
-          depth.scene.add(ambient, key, rim);
-
-          var plane = new THREE.PlaneGeometry(DEPTH_TERRAIN_WIDTH, DEPTH_TERRAIN_DEPTH, 64, 46);
-          plane.rotateX(-Math.PI / 2);
-          var pos = plane.attributes.position;
-          for (var i = 0; i < pos.count; i++) {
-            var x = pos.getX(i);
-            var z = pos.getZ(i);
-            pos.setY(i, Math.sin(x * 0.33) * 0.10 + Math.cos(z * 0.41) * 0.08 - 0.18);
-          }
-          plane.computeVertexNormals();
-          depth.terrainMaterial = new THREE.MeshStandardMaterial({
-            color: 0x284237,
-            roughness: 0.88,
-            metalness: 0.02,
-            transparent: true,
-            opacity: 0.98
-          });
-          depth.terrain = new THREE.Mesh(plane, depth.terrainMaterial);
-          depth.group.add(depth.terrain);
-          buildSatelliteTexture(THREE);
-
-          var mastGeo = new THREE.CylinderGeometry(0.055, 0.055, 1, 14);
-          depth.selectedMast = new THREE.Mesh(mastGeo, new THREE.MeshBasicMaterial({ color: hexForColor(cssVar("--ink", "#edf5ee")) }));
-          depth.selectedMast.visible = false;
-          depth.group.add(depth.selectedMast);
-          depth.selectedRing = new THREE.Mesh(
-            new THREE.TorusGeometry(0.48, 0.025, 10, 42),
-            new THREE.MeshBasicMaterial({ color: hexForColor(cssVar("--accent", "#37b37f")), transparent: true, opacity: 0.85 })
-          );
-          depth.selectedRing.rotation.x = -Math.PI / 2;
-          depth.selectedRing.visible = false;
-          depth.group.add(depth.selectedRing);
-
-          els.depthCanvas.addEventListener("pointerdown", function (e) {
-            depth.dragging = true;
-            depth.moved = false;
-            depth.downX = e.clientX;
-            depth.downY = e.clientY;
-            depth.lastX = e.clientX;
-            els.depthCanvas.setPointerCapture(e.pointerId);
-          });
-          els.depthCanvas.addEventListener("pointermove", function (e) {
-            if (!depth.dragging) return;
-            if (Math.abs(e.clientX - depth.downX) + Math.abs(e.clientY - depth.downY) > 5) depth.moved = true;
-            depth.targetYaw += (e.clientX - depth.lastX) * 0.006;
-            depth.lastX = e.clientX;
-          });
-          els.depthCanvas.addEventListener("pointerup", function (e) {
-            var wasClick = !depth.moved;
-            depth.dragging = false;
-            if (wasClick) pickDepthPole(e);
-          });
-          els.depthCanvas.addEventListener("pointercancel", function () { depth.dragging = false; });
-
-          depth.resizeObserver = new ResizeObserver(resizeDepthScene);
-          depth.resizeObserver.observe(els.depthCanvas.parentElement);
-          depth.ready = true;
-          depth.loading = false;
-          resizeDepthScene();
-          updateDepthScene(depth.rows, depth.packets);
-          requestAnimationFrame(animateDepthScene);
-        }).catch(function () {
-          depth.error = true;
-          depth.loading = false;
-          els.depthFallback.hidden = false;
-        });
-      }
-
-      function resizeDepthScene() {
-        if (!depth.ready) return;
-        var box = els.depthCanvas.parentElement.getBoundingClientRect();
-        var width = Math.max(1, Math.floor(box.width));
-        var height = Math.max(1, Math.floor(box.height));
-        depth.renderer.setSize(width, height, false);
-        var aspect = width / height;
-        var halfWidth = 15.5;
-        depth.camera.left = -halfWidth;
-        depth.camera.right = halfWidth;
-        depth.camera.top = halfWidth / aspect;
-        depth.camera.bottom = -halfWidth / aspect;
-        depth.camera.updateProjectionMatrix();
-      }
-
-      function disposeDepthObject(obj) {
-        if (!obj) return;
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) obj.material.dispose();
-        depth.group.remove(obj);
-      }
-
-      function updateDepthScene(rows, packets) {
-        depth.rows = rows;
-        depth.packets = packets;
-        if (state.screen !== "map" || state.evidenceView !== "depth") return;
-        renderDepthHud(rows, packets);
-        initDepthScene();
-        if (!depth.ready) return;
-        resizeDepthScene();
-        var THREE = depth.THREE;
-        disposeDepthObject(depth.columns);
-        disposeDepthObject(depth.tips);
-        var packetIds = {};
-        packets.forEach(function (p) { packetIds[p.id] = true; });
-        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 260 : 80);
-        var shown = context.concat(packets).slice(0, 420);
-        var selected = selectedPole();
-        if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
-        depth.visiblePoles = shown;
-        var linePositions = new Float32Array(shown.length * 6);
-        var lineColors = new Float32Array(shown.length * 6);
-        var tipPositions = new Float32Array(shown.length * 3);
-        var tipColors = new Float32Array(shown.length * 3);
-        shown.forEach(function (p, i) {
-          var pt = point3d(p);
-          var c = new THREE.Color(hexForColor(colorForTier(p.tier)));
-          var lp = i * 6;
-          linePositions[lp] = pt.x;
-          linePositions[lp + 1] = 0.05;
-          linePositions[lp + 2] = pt.z;
-          linePositions[lp + 3] = pt.x;
-          linePositions[lp + 4] = pt.y;
-          linePositions[lp + 5] = pt.z;
-          lineColors[lp] = c.r * 0.45;
-          lineColors[lp + 1] = c.g * 0.45;
-          lineColors[lp + 2] = c.b * 0.45;
-          lineColors[lp + 3] = c.r;
-          lineColors[lp + 4] = c.g;
-          lineColors[lp + 5] = c.b;
-          var tp = i * 3;
-          tipPositions[tp] = pt.x;
-          tipPositions[tp + 1] = pt.y;
-          tipPositions[tp + 2] = pt.z;
-          tipColors[tp] = c.r;
-          tipColors[tp + 1] = c.g;
-          tipColors[tp + 2] = c.b;
-        });
-        var lineGeo = new THREE.BufferGeometry();
-        lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
-        lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
-        depth.columns = new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({
-          vertexColors: true,
-          transparent: true,
-          opacity: 0.76
-        }));
-        depth.group.add(depth.columns);
-
-        var tipGeo = new THREE.BufferGeometry();
-        tipGeo.setAttribute("position", new THREE.BufferAttribute(tipPositions, 3));
-        tipGeo.setAttribute("color", new THREE.BufferAttribute(tipColors, 3));
-        depth.tips = new THREE.Points(tipGeo, new THREE.PointsMaterial({
-          size: 0.12,
-          vertexColors: true,
-          transparent: true,
-          opacity: 0.96
-        }));
-        depth.group.add(depth.tips);
-
-        if (selected) {
-          var sp = point3d(selected);
-          depth.selectedMast.visible = true;
-          depth.selectedMast.position.set(sp.x, sp.y / 2, sp.z);
-          depth.selectedMast.scale.set(1, sp.y, 1);
-          depth.selectedRing.visible = true;
-          depth.selectedRing.position.set(sp.x, 0.11, sp.z);
-        } else {
-          depth.selectedMast.visible = false;
-          depth.selectedRing.visible = false;
-        }
-      }
-
-      function animateDepthScene(time) {
-        if (!depth.ready) return;
-        var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        depth.yaw += (depth.targetYaw - depth.yaw) * 0.08;
-        var drift = reduced ? 0 : Math.sin(time * 0.00022) * 0.045;
-        depth.group.rotation.y = depth.yaw + drift;
-        depth.group.rotation.x = depth.pitch;
-        if (depth.selectedRing) {
-          var pulse = reduced ? 1 : 1 + Math.sin(time * 0.004) * 0.08;
-          depth.selectedRing.scale.set(pulse, pulse, pulse);
-        }
-        depth.renderer.render(depth.scene, depth.camera);
-        requestAnimationFrame(animateDepthScene);
       }
 
       function drawBaseMap(svg) {
@@ -4848,6 +3848,13 @@
           "Receipt hash locks the visible evidence, top drivers, action, and score used for this work cycle.",
           "Post-work follow-up compares before/after condition and expected risk reduction for accountability."
         ];
+        var manifest = [
+          "NOAA-style wind, ice, precipitation, and freeze-thaw normals.",
+          "Image-derived canopy, pole lean, crossarm, and right-of-way structure proxies.",
+          "FEMA-style flood exposure, drainage, slope, and soil moisture proxies.",
+          "Road access, salt exposure, critical facilities, and outage consequence proxies.",
+          "Moderated resident and crew reports kept outside model training."
+        ];
         els.receiptStatus.textContent = p.tier + " / " + p.action + " / " + p.hash;
         els.receiptShell.innerHTML =
           '<div class="receipt-card">' +
@@ -4855,7 +3862,7 @@
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
               '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Pole estimate ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
               locationActions(p) +
-              '<div class="street-context-note"><strong>Street View road context:</strong> ' + esc(streetContextText(p)) + '. This avoids dead-end panorama links from synthetic pole coordinates.</div>' +
+              '<div class="street-context-note"><strong>Road context:</strong> ' + esc(streetContextText(p)) + '. This anchors the synthetic pole estimate to a public-road reference without promising unavailable imagery.</div>' +
               '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
             '</div>' +
             '<div class="receipt-body">' +
@@ -4879,10 +3886,17 @@
             '</div>' +
           '</div>' +
           '<div class="receipt-card">' +
-            '<div class="receipt-top"><h3>Decision audit</h3><p>Review trail for judges, supervisors, and field crews.</p></div>' +
-            '<div class="receipt-body"><ul class="audit">' + audit.map(function (a) {
+            '<div class="receipt-top"><h3>Decision audit</h3><p>Guardrails, provenance, and source manifest for regulator and crew review.</p></div>' +
+            '<div class="receipt-body">' +
+              '<ul class="audit">' + audit.map(function (a) {
               return '<li>' + esc(a) + '</li>';
-            }).join("") + '</ul></div>' +
+              }).join("") + '</ul>' +
+              '<h2>Guardrails and source manifest</h2>' +
+              '<ul class="source-list">' + manifest.map(function (item) {
+                return '<li><i></i><span>' + esc(item) + '</span></li>';
+              }).join("") + '</ul>' +
+              '<div class="street-context-note"><strong>Validation-ready label:</strong> Synthetic-demo estimates are clearly disclosed here and ready to be checked against DTE inspection, outage, and work-order outcomes.</div>' +
+            '</div>' +
           '</div>';
       }
 
@@ -4949,9 +3963,7 @@
         updateMapViewportSize();
         renderControls();
         renderDisplayControls();
-        renderViewControls();
         renderFieldMeta(rows, packets);
-        updateDepthScene(rows, packets);
         drawMap(rows, packets);
         renderTable(rows, packets);
         renderReceipt(selectedPole());
@@ -4969,8 +3981,6 @@
           openCommandPalette();
         } else if (e.key === "Escape" && commandState.open) {
           closeCommandPalette();
-        } else if (e.key === "Escape" && !els.poleViewOverlay.hidden) {
-          closePoleView();
         }
       });
 
@@ -4997,13 +4007,6 @@
           performCommand(items[commandState.activeIndex].id);
         }
       });
-      els.poleViewClose.addEventListener("click", closePoleView);
-      els.poleViewOverlay.addEventListener("click", function (e) {
-        if (e.target === els.poleViewOverlay) closePoleView();
-      });
-      els.poleViewPrev.addEventListener("click", function () { movePoleView(-1); });
-      els.poleViewNext.addEventListener("click", function () { movePoleView(1); });
-
       els.objective.addEventListener("change", function () {
         state.objective = els.objective.value;
         render();
@@ -5042,8 +4045,6 @@
       window.addEventListener("resize", function () {
         updateMapViewportSize();
         if (realMap.ready) realMap.map.invalidateSize();
-        resizeDepthScene();
-        if (!els.poleViewOverlay.hidden) drawPoleView(selectedPole());
       });
 
       render();
