@@ -389,11 +389,11 @@
       text-transform: uppercase;
     }
 
-    select, input[type="range"], textarea, input[type="text"] {
+    select, input[type="range"], textarea, input[type="text"], input[type="search"] {
       width: 100%;
     }
 
-    select, textarea, input[type="text"] {
+    select, textarea, input[type="text"], input[type="search"] {
       min-height: 36px;
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -462,6 +462,29 @@
       grid-template-columns: 1fr;
       gap: 8px;
       margin-top: 12px;
+    }
+
+    .resident-search {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .resident-search input {
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    .resident-search .action-btn {
+      min-width: 76px;
+    }
+
+    .search-status {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
     }
 
     .action-btn {
@@ -735,6 +758,32 @@
 
     .street-context-note strong {
       color: var(--ink);
+    }
+
+    .resident-summary {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .resident-summary strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .resident-summary.impact {
+      border-left-color: var(--blue);
+      background: var(--panel-2);
     }
 
     .worklist {
@@ -1279,7 +1328,8 @@
 
     select,
     textarea,
-    input[type="text"] {
+    input[type="text"],
+    input[type="search"] {
       min-height: var(--control-height);
       border-color: var(--line);
       border-radius: var(--radius);
@@ -1291,6 +1341,7 @@
     select:focus,
     textarea:focus,
     input[type="text"]:focus,
+    input[type="search"]:focus,
     button:focus-visible {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
@@ -2237,7 +2288,8 @@
 
     select,
     textarea,
-    input[type="text"] {
+    input[type="text"],
+    input[type="search"] {
       border: 0;
       border-bottom: 2px solid var(--line-strong);
       border-radius: 0;
@@ -2246,7 +2298,8 @@
 
     select:focus,
     textarea:focus,
-    input[type="text"]:focus {
+    input[type="text"]:focus,
+    input[type="search"]:focus {
       border-bottom-color: var(--accent);
       box-shadow: inset 0 -1px 0 var(--accent);
     }
@@ -2647,7 +2700,13 @@
         <div class="field-title">
           <div>
             <h2>Evidence field</h2>
-            <p id="fieldSubtitle">Real Michigan map with statewide pole work packets, receipt-level evidence, and ranked crew priorities.</p>
+            <p id="fieldSubtitle">Michigan-only map with statewide pole work packets, receipt-level evidence, and ranked crew priorities.</p>
+            <label for="residentSearch">Find my area</label>
+            <div class="resident-search">
+              <input id="residentSearch" type="search" autocomplete="off" placeholder="County, city, or address">
+              <button class="action-btn secondary" id="residentSearchButton" type="button">Find</button>
+            </div>
+            <span class="search-status" id="searchStatus">Search a Michigan county or city to focus the map and receipt.</span>
             <div class="field-meta" id="fieldMeta"></div>
           </div>
           <div class="field-tools">
@@ -2721,6 +2780,9 @@
   <script>
     (function () {
       var MAP_BOUNDS = { minLon: -90.45, maxLon: -82.05, minLat: 41.65, maxLat: 48.35 };
+      var MICHIGAN_CENTER = [44.55, -85.65];
+      var MICHIGAN_LATLNG_BOUNDS = [[MAP_BOUNDS.minLat, MAP_BOUNDS.minLon], [MAP_BOUNDS.maxLat, MAP_BOUNDS.maxLon]];
+      var MICHIGAN_PADDED_BOUNDS = [[41.28, -90.9], [48.72, -81.65]];
 
       var COUNTY_AREAS = [
         "Alcona|44.68|-83.59|0.42|north",
@@ -2927,6 +2989,8 @@
         density: "comfortable",
         accent: "blue",
         showAlerts: false,
+        searchQuery: "",
+        searchStatus: "Search a Michigan county or city to focus the map and receipt.",
         selectedId: null
       };
 
@@ -2952,6 +3016,9 @@
         opsBanner: document.getElementById("opsBanner"),
         kpis: document.getElementById("kpis"),
         objective: document.getElementById("objective"),
+        residentSearch: document.getElementById("residentSearch"),
+        residentSearchButton: document.getElementById("residentSearchButton"),
+        searchStatus: document.getElementById("searchStatus"),
         tierControls: document.getElementById("tierControls"),
         county: document.getElementById("county"),
         minRisk: document.getElementById("minRisk"),
@@ -3208,6 +3275,148 @@
         return POLES.find(function (p) { return p.id === state.selectedId; });
       }
 
+      function normalizeSearch(s) {
+        return String(s || "").toLowerCase().replace(/[^a-z0-9., -]/g, " ").replace(/\s+/g, " ").trim();
+      }
+
+      function isMichiganCoord(lat, lon) {
+        return lat >= MAP_BOUNDS.minLat && lat <= MAP_BOUNDS.maxLat && lon >= MAP_BOUNDS.minLon && lon <= MAP_BOUNDS.maxLon;
+      }
+
+      function parseCoordinateSearch(query) {
+        var nums = query.match(/-?\d+(?:\.\d+)?/g);
+        if (!nums || nums.length < 2) return null;
+        var a = Number(nums[0]);
+        var b = Number(nums[1]);
+        if (isMichiganCoord(a, b)) return { lat: a, lon: b };
+        if (isMichiganCoord(b, a)) return { lat: b, lon: a };
+        return null;
+      }
+
+      function distanceSq(a, b) {
+        return Math.pow(a.lat - b.lat, 2) + Math.pow((a.lon - b.lon) * 0.72, 2);
+      }
+
+      function nearestPoleTo(lat, lon, rows) {
+        var here = { lat: lat, lon: lon };
+        var list = rows && rows.length ? rows : POLES;
+        return list.reduce(function (best, p) {
+          var d = distanceSq(here, p);
+          return !best || d < best.dist ? { pole: p, dist: d } : best;
+        }, null).pole;
+      }
+
+      function nearestCountyForCoord(lat, lon) {
+        var here = { lat: lat, lon: lon };
+        return COUNTY_AREAS.reduce(function (best, area) {
+          var d = distanceSq(here, area);
+          return !best || d < best.dist ? { county: area.name, dist: d } : best;
+        }, null).county;
+      }
+
+      var CITY_ALIASES = {
+        "detroit": "Wayne",
+        "dearborn": "Wayne",
+        "livonia": "Wayne",
+        "royal oak": "Oakland",
+        "southfield": "Oakland",
+        "pontiac": "Oakland",
+        "sterling heights": "Macomb",
+        "warren": "Macomb",
+        "ann arbor": "Washtenaw",
+        "ypsilanti": "Washtenaw",
+        "brighton": "Livingston",
+        "port huron": "St. Clair",
+        "flint": "Genesee",
+        "monroe": "Monroe",
+        "lansing": "Ingham",
+        "east lansing": "Ingham",
+        "saginaw": "Saginaw",
+        "grand rapids": "Kent",
+        "kalamazoo": "Kalamazoo",
+        "muskegon": "Muskegon",
+        "traverse city": "Grand Traverse",
+        "marquette": "Marquette",
+        "houghton": "Houghton",
+        "sault ste marie": "Chippewa",
+        "sault ste. marie": "Chippewa",
+        "alpena": "Alpena",
+        "jackson": "Jackson",
+        "battle creek": "Calhoun",
+        "bay city": "Bay"
+      };
+
+      var SEARCH_TARGETS = null;
+      function searchTargets() {
+        if (SEARCH_TARGETS) return SEARCH_TARGETS;
+        var targets = [];
+        COUNTIES.forEach(function (county) {
+          targets.push({ key: normalizeSearch(county), label: county + " County", county: county });
+          targets.push({ key: normalizeSearch(county + " county"), label: county + " County", county: county });
+        });
+        Object.keys(CITY_ALIASES).forEach(function (city) {
+          targets.push({ key: normalizeSearch(city), label: city.replace(/\b\w/g, function (c) { return c.toUpperCase(); }), county: CITY_ALIASES[city] });
+        });
+        Object.keys(STREET_CONTEXTS).forEach(function (county) {
+          STREET_CONTEXTS[county].forEach(function (ctx) {
+            var label = ctx.label;
+            targets.push({ key: normalizeSearch(label), label: label, county: county, lat: ctx.lat, lon: ctx.lon });
+            var parts = label.split(",");
+            if (parts[1]) targets.push({ key: normalizeSearch(parts[1]), label: parts[1].trim(), county: county, lat: ctx.lat, lon: ctx.lon });
+          });
+        });
+        STATIONS.forEach(function (s) {
+          targets.push({ key: normalizeSearch(s[0]), label: s[0], county: nearestCountyForCoord(s[2], s[1]), lat: s[2], lon: s[1] });
+        });
+        SEARCH_TARGETS = targets.sort(function (a, b) { return b.key.length - a.key.length; });
+        return SEARCH_TARGETS;
+      }
+
+      function resolveResidentSearch(query) {
+        var q = normalizeSearch(query);
+        if (!q) return null;
+        var coords = parseCoordinateSearch(q);
+        if (coords) {
+          var pole = nearestPoleTo(coords.lat, coords.lon, POLES);
+          return { type: "coordinate", label: coordinateText(pole), county: pole.county, pole: pole };
+        }
+        var target = searchTargets().find(function (candidate) {
+          if (!candidate.key) return false;
+          if (q === candidate.key) return true;
+          if (candidate.key.length < 4) return false;
+          return q.indexOf(candidate.key) !== -1;
+        });
+        if (!target) return null;
+        var rows = POLES.filter(function (p) { return p.county === target.county; });
+        var pole = target.lat && target.lon ? nearestPoleTo(target.lat, target.lon, rows) : rows.slice().sort(function (a, b) {
+          return priority(b) - priority(a);
+        })[0];
+        return { type: "place", label: target.label, county: target.county, pole: pole };
+      }
+
+      function performResidentSearch() {
+        var query = els.residentSearch.value.trim();
+        state.searchQuery = query;
+        if (!query) {
+          state.county = "All counties";
+          state.searchStatus = "Showing all Michigan counties.";
+          setScreen("work");
+          return;
+        }
+        var result = resolveResidentSearch(query);
+        if (!result || !result.pole) {
+          state.searchStatus = "No match yet. Try a Michigan county, city, road, or lat/lon.";
+          renderControls();
+          return;
+        }
+        state.county = result.county;
+        state.tier = "all";
+        state.minRisk = 0;
+        state.selectedId = result.pole.id;
+        state.searchStatus = "Showing " + result.county + " County; selected " + result.pole.receipt + ".";
+        setScreen("work");
+      }
+
       function screenMeta(id) {
         return SCREENS.find(function (screen) { return screen.id === id; }) || SCREENS[0];
       }
@@ -3371,6 +3580,8 @@
         els.minRiskLabel.textContent = ">= " + state.minRisk + "%";
         els.budgetLabel.textContent = state.budget + " packets";
         els.objective.value = state.objective;
+        els.residentSearch.value = state.searchQuery;
+        els.searchStatus.textContent = state.searchStatus;
         els.confidenceGuard.checked = state.confidenceGuard;
         els.communityOverlay.checked = state.communityOverlay;
         els.explainability.checked = state.explainability;
@@ -3446,6 +3657,22 @@
 
       var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       var OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      var MICHIGAN_MASK_OUTER = [
+        [41.28, -90.9], [48.72, -90.9], [48.72, -81.65], [41.28, -81.65]
+      ];
+      var MICHIGAN_LOWER_RING = [
+        [41.70, -86.82], [41.76, -84.80], [41.72, -82.62], [42.10, -82.42],
+        [42.75, -82.52], [43.38, -82.78], [44.05, -83.18], [44.72, -83.31],
+        [45.20, -83.70], [45.56, -84.46], [45.78, -85.32], [45.62, -86.02],
+        [45.20, -86.25], [44.58, -86.28], [43.80, -86.45], [43.00, -86.42],
+        [42.20, -86.30], [41.84, -86.62]
+      ];
+      var MICHIGAN_UPPER_RING = [
+        [45.62, -87.78], [45.84, -86.76], [45.78, -85.72], [46.08, -84.70],
+        [46.42, -84.18], [46.62, -84.52], [46.54, -85.45], [46.42, -86.36],
+        [46.60, -87.35], [46.64, -88.32], [47.05, -89.16], [47.30, -90.05],
+        [46.82, -90.35], [46.34, -89.62], [45.98, -88.70]
+      ];
       var realMap = {
         loading: false,
         ready: false,
@@ -3456,6 +3683,29 @@
         rows: [],
         packets: []
       };
+
+      function addMichiganMask(L) {
+        realMap.map.createPane("stateMask");
+        realMap.map.getPane("stateMask").style.zIndex = 405;
+        realMap.map.getPane("stateMask").style.pointerEvents = "none";
+        L.polygon([MICHIGAN_MASK_OUTER, MICHIGAN_LOWER_RING, MICHIGAN_UPPER_RING], {
+          pane: "stateMask",
+          stroke: false,
+          fill: true,
+          fillColor: cssVar("--paper", "#f6f8f3"),
+          fillOpacity: 0.68,
+          interactive: false
+        }).addTo(realMap.map);
+        [MICHIGAN_LOWER_RING, MICHIGAN_UPPER_RING].forEach(function (ring) {
+          L.polyline(ring.concat([ring[0]]), {
+            pane: "stateMask",
+            color: cssVar("--accent", "#247553"),
+            weight: 2,
+            opacity: 0.85,
+            interactive: false
+          }).addTo(realMap.map);
+        });
+      }
 
       function coordinateText(p) {
         return p.lat.toFixed(5) + ", " + p.lon.toFixed(5);
@@ -3485,6 +3735,37 @@
         return "Routine check";
       }
 
+      function plainDriverLabel(driver) {
+        return {
+          vegetation: "canopy contact",
+          lean: "pole lean",
+          wind: "wind and ice exposure",
+          flood: "flood and drainage exposure",
+          soil: "base and soil moisture risk",
+          criticality: "outage impact for nearby customers",
+          access: "crew access friction"
+        }[driver.key] || driver.label.toLowerCase();
+      }
+
+      function plainReceiptSentence(p) {
+        var reasons = p.drivers.slice(0, 2).map(plainDriverLabel);
+        if (reasons.length < 2) reasons.push("local condition signals");
+        return "This pole is prioritized because " + reasons[0] + " and " + reasons[1] + " raise outage risk.";
+      }
+
+      function residentImpactLine(p) {
+        if (p.tier === "critical") {
+          return "Outage prevention and safety: this should be inspected or fixed before lower-risk poles nearby, especially before storm conditions.";
+        }
+        if (p.tier === "high") {
+          return "Outage prevention: this belongs in an upcoming work window, but the receipt is not a same-day crew appointment.";
+        }
+        if (p.tier === "elevated") {
+          return "Watchlist: no immediate resident action is implied, but the pole stays visible for future inspection cycles.";
+        }
+        return "No immediate action: this pole stays in routine inspection unless new field evidence changes the receipt.";
+      }
+
       function locationActions(p) {
         return '<div class="location-actions">' +
           '<a class="map-link primary" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open pole estimate in Google Maps</a>' +
@@ -3509,6 +3790,7 @@
           { id: "csv", label: "Export work packets CSV", group: "Export", run: exportCsv },
           { id: "json", label: "Export selected receipt JSON", group: "Export", run: exportJson },
           { id: "print", label: "Print receipt", group: "Export", run: function () { window.print(); } },
+          { id: "search", label: "Search my area", group: "Resident", run: function () { setScreen("work"); setTimeout(function () { els.residentSearch.focus(); }, 0); } },
           { id: "county", label: "Change county filter", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.county.focus(); }, 0); } },
           { id: "budget", label: "Change inspection budget", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.budget.focus(); }, 0); } }
         ];
@@ -3613,13 +3895,22 @@
         var L = realMap.L;
         realMap.map = L.map(els.realMap, {
           zoomControl: false,
-          scrollWheelZoom: false
-        }).setView([44.55, -85.85], 6);
+          scrollWheelZoom: false,
+          zoomSnap: 0.25,
+          minZoom: 6,
+          maxZoom: 13,
+          maxBounds: MICHIGAN_PADDED_BOUNDS,
+          maxBoundsViscosity: 0.95
+        }).setView(MICHIGAN_CENTER, 6.5);
         L.control.zoom({ position: "bottomright" }).addTo(realMap.map);
         L.tileLayer(OSM_TILE_URL, {
           maxZoom: 19,
+          noWrap: true,
+          bounds: MICHIGAN_PADDED_BOUNDS,
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(realMap.map);
+        addMichiganMask(L);
+        realMap.map.fitBounds(MICHIGAN_LATLNG_BOUNDS, { padding: [8, 8], maxZoom: 6.5 });
         realMap.layer = L.layerGroup().addTo(realMap.map);
         realMap.ready = true;
         setTimeout(function () {
@@ -3861,6 +4152,8 @@
             '<div class="receipt-top">' +
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
               '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Pole estimate ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
+              '<div class="resident-summary"><strong>Plain-language reason</strong>' + esc(plainReceiptSentence(p)) + '</div>' +
+              '<div class="resident-summary impact"><strong>What this means for me</strong>' + esc(residentImpactLine(p)) + '</div>' +
               locationActions(p) +
               '<div class="street-context-note"><strong>Road context:</strong> ' + esc(streetContextText(p)) + '. This anchors the synthetic pole estimate to a public-road reference without promising unavailable imagery.</div>' +
               '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
@@ -4005,6 +4298,13 @@
         } else if (e.key === "Enter" && items[commandState.activeIndex]) {
           e.preventDefault();
           performCommand(items[commandState.activeIndex].id);
+        }
+      });
+      els.residentSearchButton.addEventListener("click", performResidentSearch);
+      els.residentSearch.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          performResidentSearch();
         }
       });
       els.objective.addEventListener("change", function () {
