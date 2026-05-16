@@ -123,6 +123,16 @@ def main() -> None:
         json.dump(summary, fh, indent=2, sort_keys=True)
     print(f"    wrote {os.path.join(OUTPUT_DIR, 'summary.json')}")
 
+    print("\n[9] Building interactive offline app (single self-contained "
+          "file) ...")
+    from .app_export import build_app
+    app_path = build_app(fd, fr, vr, econ)
+    asz = os.path.getsize(app_path)
+    print(f"    wrote {app_path}  ({asz:,} bytes)")
+    print(f"    wrote {os.path.join(OUTPUT_DIR, 'app_data.json')}")
+    print(f"    >> open {app_path} (interactive map · click · filter · "
+          f"export)")
+
     print("\n" + "=" * 74)
     print("DONE - reactive -> predictive, imagery-led, validated, in one figure.")
     print("=" * 74)

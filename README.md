@@ -168,7 +168,7 @@ is unchanged and immediately consumes real Sentinel-2 (ESA, free) / NAIP
 
 ---
 
-## Run it (one command, offline, deterministic)
+## Run it (one command → an interactive map you click)
 
 ```bash
 cd dte-vista
@@ -176,15 +176,55 @@ pip install -r requirements.txt      # numpy scipy scikit-learn matplotlib pytes
 ./demo.sh                            # or:  python -m vista
 ```
 
-No network, no API keys. Outputs `output/dashboard.png` and
-`output/summary.json`. Run twice → byte-identical (CI asserts md5 equality of
-the PNG, the JSON, and stdout).
+Then **open `output/app.html`** — double-click it. That is the deliverable:
+a fully interactive, dark DTE risk-profiling dashboard with a clickable
+territory map, per-pole "why-it's-flagged" drill-down, tier / county /
+min-risk filters, a budget slider that shows the reactive→predictive
+coverage live, and a one-click CSV export of the current inspection
+worklist. It is **one self-contained HTML file** — the data is embedded
+inline, **zero** external resources (no CDN, no web fonts, no map tiles, no
+network). It works offline by double-click via `file://`, on any machine,
+forever.
+
+`output/dashboard.png` is the **static fallback** (same numbers, one figure)
+for slides or a printout where you can't open a browser.
+`output/app_data.json` is the machine-readable snapshot the app embeds;
+`output/summary.json` is the metrics/provenance artifact.
+
+No network, no API keys. Run twice → **byte-identical** (`app_data.json`,
+`app.html`, `dashboard.png`, `summary.json`, and stdout all md5-stable; CI
+asserts it).
 
 Tests:
 
 ```bash
-python -m pytest -q     # 40 tests, all green (~100s; refits real models)
+python -m pytest -q     # 47 tests, all green (~3 min; refits real models)
 ```
+
+### 2-minute demo script (the exact click-path)
+
+> Run `./demo.sh` beforehand, then double-click `output/app.html`.
+
+1. **Open `output/app.html`.** A dark DTE dashboard loads instantly — no
+   loading spinner, no network. Say: *"Fully offline, deterministic, public
+   data only."*
+2. **Point to the KPI strip** (top): Held-out **ROC-AUC ≈ 0.87**, **Lift vs
+   age-cycle ≈ 1.9×**, **Net benefit ≈ $448K/cycle**, and the headline —
+   *"Imagery adds +0.149 ROC-AUC."* That's the whole thesis in one row.
+3. **Click the #1 row in the worklist** (or the top-ringed pole on the map).
+   The right panel opens: a big risk %, tier badge, county/segment, and a
+   ranked **bar chart of *why*** — e.g. *pole lean (imagery)*, *canopy
+   encroaching the right-of-way*, *flood-zone exposure* — red bars = raise
+   risk. Say: *"Not a black box — the planner sees the drivers."*
+4. **Read the ACTION callout**: e.g. **TREE TRIM** or **INSPECT/REPLACE** —
+   derived from the pole's #1 driver. *"This is the work order."*
+5. **Drag the budget slider.** Watch the coverage line update live:
+   *"Inspecting N of 1,400 poles, VISTA catches X% of predicted failures —
+   vs ≈N/M% for a reactive, age-blind crew."* That is the
+   reactive→predictive story, interactive.
+6. **(Optional) Filter** to one county / CRITICAL only, then click
+   **Export inspection plan (CSV)** — a real file downloads (client-side,
+   offline). *"Hand this to the crew tomorrow morning."*
 
 ### Captured stdout (verbatim, deterministic)
 

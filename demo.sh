@@ -23,4 +23,4 @@ fi
 
 "$PY" -m vista
 
-echo ">> done. open output/dashboard.png"
+echo ">> done. open output/app.html (interactive) or output/dashboard.png"
