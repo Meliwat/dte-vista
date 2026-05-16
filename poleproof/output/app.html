@@ -982,6 +982,98 @@
       background: var(--panel-2);
     }
 
+    .field-visuals {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.42fr) minmax(360px, 0.58fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .depth-scene {
+      position: relative;
+      height: min(42vh, 430px);
+      min-height: 360px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 62% 18%, color-mix(in srgb, var(--blue) 20%, transparent), transparent 34%),
+        linear-gradient(180deg, color-mix(in srgb, var(--panel-3) 72%, transparent), transparent 70%);
+      isolation: isolate;
+    }
+
+    .depth-scene::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+      opacity: 0.8;
+    }
+
+    #riskDepthCanvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 360px;
+      cursor: grab;
+    }
+
+    #riskDepthCanvas:active {
+      cursor: grabbing;
+    }
+
+    .depth-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      z-index: 2;
+      display: grid;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .depth-hud strong {
+      width: max-content;
+      max-width: 100%;
+      padding: 5px 7px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: color-mix(in srgb, var(--panel) 82%, transparent);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .depth-hud div {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .depth-hud span,
+    .depth-fallback {
+      width: max-content;
+      max-width: 100%;
+      padding: 4px 7px;
+      border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: color-mix(in srgb, var(--panel) 76%, transparent);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .depth-fallback {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 3;
+    }
+
     .legend {
       color: var(--muted);
       letter-spacing: 0.04em;
@@ -1260,6 +1352,10 @@
         position: static;
       }
 
+      .field-visuals {
+        grid-template-columns: 1fr;
+      }
+
       th, td {
         padding: 8px;
       }
@@ -1288,6 +1384,11 @@
       }
 
       #map {
+        min-height: 320px;
+      }
+
+      .depth-scene,
+      #riskDepthCanvas {
         min-height: 320px;
       }
     }
@@ -1412,9 +1513,17 @@
           </div>
         </div>
 
-        <div class="map-shell">
-          <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Southeast Michigan utility pole risk field"></svg>
-          <div class="map-tip" id="mapTip"></div>
+        <div class="field-visuals">
+          <section class="depth-scene" aria-label="3D risk relief">
+            <canvas id="riskDepthCanvas"></canvas>
+            <div class="depth-hud" id="depthHud"></div>
+            <div class="depth-fallback" id="depthFallback" hidden>3D risk layer unavailable</div>
+          </section>
+
+          <div class="map-shell">
+            <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Southeast Michigan utility pole risk field"></svg>
+            <div class="map-tip" id="mapTip"></div>
+          </div>
         </div>
 
         <section class="worklist" aria-label="Prioritized worklist">
@@ -1514,6 +1623,9 @@
         densityControls: document.getElementById("densityControls"),
         accentControls: document.getElementById("accentControls"),
         showAlerts: document.getElementById("showAlerts"),
+        depthCanvas: document.getElementById("riskDepthCanvas"),
+        depthHud: document.getElementById("depthHud"),
+        depthFallback: document.getElementById("depthFallback"),
         map: document.getElementById("map"),
         mapTip: document.getElementById("mapTip"),
         workRows: document.getElementById("workRows"),
@@ -1563,6 +1675,21 @@
       function cssVar(name, fallback) {
         var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         return value || fallback;
+      }
+
+      var COLOR_HEX_CACHE = {};
+      function hexForColor(color, fallback) {
+        var key = color || fallback || "fallback";
+        if (COLOR_HEX_CACHE[key]) return COLOR_HEX_CACHE[key];
+        var span = document.createElement("span");
+        span.style.color = color || fallback;
+        document.body.appendChild(span);
+        var rgb = getComputedStyle(span).color.match(/\d+/g) || [55, 179, 127];
+        span.remove();
+        COLOR_HEX_CACHE[key] = rgb.slice(0, 3).reduce(function (sum, v, i) {
+          return sum + (Number(v) << (16 - i * 8));
+        }, 0);
+        return COLOR_HEX_CACHE[key];
       }
 
       function lonForCounty(i, jitter) {
@@ -1845,6 +1972,253 @@
           '<span>avg packet risk ' + pct1(avgRisk) + '</span>';
       }
 
+      var THREE_MODULE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+      var depth = {
+        loading: false,
+        ready: false,
+        error: false,
+        rows: [],
+        packets: [],
+        yaw: -0.32,
+        pitch: -0.10,
+        targetYaw: -0.32,
+        dragging: false,
+        lastX: 0,
+        scene: null,
+        camera: null,
+        renderer: null,
+        group: null,
+        terrain: null,
+        columns: null,
+        tips: null,
+        selectedMast: null,
+        selectedRing: null,
+        resizeObserver: null,
+        THREE: null
+      };
+
+      function renderDepthHud(rows, packets) {
+        var selected = selectedPole();
+        var critical = packets.filter(function (p) { return p.tier === "critical"; }).length;
+        var peak = packets.reduce(function (best, p) { return !best || p.risk > best.risk ? p : best; }, null);
+        els.depthHud.innerHTML =
+          '<strong>3D risk relief</strong><div>' +
+          '<span>' + packets.length + ' active columns</span>' +
+          '<span>' + critical + ' critical peaks</span>' +
+          '<span>peak ' + esc(peak ? peak.county : "none") + ' ' + (peak ? pct1(peak.risk) : "0.0%") + '</span>' +
+          '<span>selected ' + esc(selected ? selected.id : "none") + '</span>' +
+          '</div>';
+      }
+
+      function point3d(p) {
+        return {
+          x: (((p.lon + 84.35) / 2.12) - 0.5) * 24,
+          z: -((((p.lat - 41.65) / 1.96) - 0.5) * 14),
+          y: 0.08 + p.risk * 4.1 + p.criticality * 0.85
+        };
+      }
+
+      function initDepthScene() {
+        if (depth.ready || depth.loading || depth.error || !els.depthCanvas) return;
+        depth.loading = true;
+        import(THREE_MODULE_URL).then(function (mod) {
+          var THREE = mod;
+          depth.THREE = THREE;
+          depth.renderer = new THREE.WebGLRenderer({
+            canvas: els.depthCanvas,
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+          });
+          depth.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+          depth.renderer.setClearColor(0x000000, 0);
+          depth.scene = new THREE.Scene();
+          depth.camera = new THREE.OrthographicCamera(-14, 14, 12, -12, 0.1, 100);
+          depth.camera.position.set(9, 10, 14);
+          depth.camera.lookAt(0, 1.4, 0);
+          depth.group = new THREE.Group();
+          depth.scene.add(depth.group);
+
+          var ambient = new THREE.AmbientLight(0xffffff, 0.8);
+          var key = new THREE.DirectionalLight(0xffffff, 1.25);
+          key.position.set(-8, 14, 12);
+          var rim = new THREE.PointLight(hexForColor(cssVar("--blue", "#57a9dc")), 1.6, 42);
+          rim.position.set(10, 8, -8);
+          depth.scene.add(ambient, key, rim);
+
+          var plane = new THREE.PlaneGeometry(28, 16, 42, 24);
+          plane.rotateX(-Math.PI / 2);
+          var pos = plane.attributes.position;
+          for (var i = 0; i < pos.count; i++) {
+            var x = pos.getX(i);
+            var z = pos.getZ(i);
+            pos.setY(i, Math.sin(x * 0.5) * 0.13 + Math.cos(z * 0.75) * 0.10 - 0.20);
+          }
+          plane.computeVertexNormals();
+          depth.terrain = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({
+            color: hexForColor(cssVar("--panel-3", "#16251d")),
+            roughness: 0.82,
+            metalness: 0.18,
+            transparent: true,
+            opacity: 0.82
+          }));
+          depth.group.add(depth.terrain);
+
+          var grid = new THREE.GridHelper(28, 28, hexForColor(cssVar("--line-strong", "#3a5448")), hexForColor(cssVar("--line", "#26372f")));
+          grid.position.y = 0.02;
+          depth.group.add(grid);
+
+          var mastGeo = new THREE.CylinderGeometry(0.055, 0.055, 1, 14);
+          depth.selectedMast = new THREE.Mesh(mastGeo, new THREE.MeshBasicMaterial({ color: hexForColor(cssVar("--ink", "#edf5ee")) }));
+          depth.selectedMast.visible = false;
+          depth.group.add(depth.selectedMast);
+          depth.selectedRing = new THREE.Mesh(
+            new THREE.TorusGeometry(0.48, 0.025, 10, 42),
+            new THREE.MeshBasicMaterial({ color: hexForColor(cssVar("--accent", "#37b37f")), transparent: true, opacity: 0.85 })
+          );
+          depth.selectedRing.rotation.x = -Math.PI / 2;
+          depth.selectedRing.visible = false;
+          depth.group.add(depth.selectedRing);
+
+          els.depthCanvas.addEventListener("pointerdown", function (e) {
+            depth.dragging = true;
+            depth.lastX = e.clientX;
+            els.depthCanvas.setPointerCapture(e.pointerId);
+          });
+          els.depthCanvas.addEventListener("pointermove", function (e) {
+            if (!depth.dragging) return;
+            depth.targetYaw += (e.clientX - depth.lastX) * 0.006;
+            depth.lastX = e.clientX;
+          });
+          els.depthCanvas.addEventListener("pointerup", function () { depth.dragging = false; });
+          els.depthCanvas.addEventListener("pointercancel", function () { depth.dragging = false; });
+
+          depth.resizeObserver = new ResizeObserver(resizeDepthScene);
+          depth.resizeObserver.observe(els.depthCanvas.parentElement);
+          depth.ready = true;
+          depth.loading = false;
+          resizeDepthScene();
+          updateDepthScene(depth.rows, depth.packets);
+          requestAnimationFrame(animateDepthScene);
+        }).catch(function () {
+          depth.error = true;
+          depth.loading = false;
+          els.depthFallback.hidden = false;
+        });
+      }
+
+      function resizeDepthScene() {
+        if (!depth.ready) return;
+        var box = els.depthCanvas.parentElement.getBoundingClientRect();
+        var width = Math.max(1, Math.floor(box.width));
+        var height = Math.max(1, Math.floor(box.height));
+        depth.renderer.setSize(width, height, false);
+        var aspect = width / height;
+        var halfWidth = 14;
+        depth.camera.left = -halfWidth;
+        depth.camera.right = halfWidth;
+        depth.camera.top = halfWidth / aspect;
+        depth.camera.bottom = -halfWidth / aspect;
+        depth.camera.updateProjectionMatrix();
+      }
+
+      function disposeDepthObject(obj) {
+        if (!obj) return;
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) obj.material.dispose();
+        depth.group.remove(obj);
+      }
+
+      function updateDepthScene(rows, packets) {
+        depth.rows = rows;
+        depth.packets = packets;
+        renderDepthHud(rows, packets);
+        initDepthScene();
+        if (!depth.ready) return;
+        var THREE = depth.THREE;
+        disposeDepthObject(depth.columns);
+        disposeDepthObject(depth.tips);
+        var packetIds = {};
+        packets.forEach(function (p) { packetIds[p.id] = true; });
+        var shown = rows.slice(0, 850);
+        var linePositions = new Float32Array(shown.length * 6);
+        var lineColors = new Float32Array(shown.length * 6);
+        var tipPositions = new Float32Array(shown.length * 3);
+        var tipColors = new Float32Array(shown.length * 3);
+        shown.forEach(function (p, i) {
+          var pt = point3d(p);
+          var c = new THREE.Color(hexForColor(packetIds[p.id] ? cssVar("--blue", "#57a9dc") : colorForTier(p.tier)));
+          var lp = i * 6;
+          linePositions[lp] = pt.x;
+          linePositions[lp + 1] = 0.05;
+          linePositions[lp + 2] = pt.z;
+          linePositions[lp + 3] = pt.x;
+          linePositions[lp + 4] = pt.y;
+          linePositions[lp + 5] = pt.z;
+          lineColors[lp] = c.r * 0.45;
+          lineColors[lp + 1] = c.g * 0.45;
+          lineColors[lp + 2] = c.b * 0.45;
+          lineColors[lp + 3] = c.r;
+          lineColors[lp + 4] = c.g;
+          lineColors[lp + 5] = c.b;
+          var tp = i * 3;
+          tipPositions[tp] = pt.x;
+          tipPositions[tp + 1] = pt.y;
+          tipPositions[tp + 2] = pt.z;
+          tipColors[tp] = c.r;
+          tipColors[tp + 1] = c.g;
+          tipColors[tp + 2] = c.b;
+        });
+        var lineGeo = new THREE.BufferGeometry();
+        lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
+        lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
+        depth.columns = new THREE.LineSegments(lineGeo, new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.76
+        }));
+        depth.group.add(depth.columns);
+
+        var tipGeo = new THREE.BufferGeometry();
+        tipGeo.setAttribute("position", new THREE.BufferAttribute(tipPositions, 3));
+        tipGeo.setAttribute("color", new THREE.BufferAttribute(tipColors, 3));
+        depth.tips = new THREE.Points(tipGeo, new THREE.PointsMaterial({
+          size: 0.12,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.96
+        }));
+        depth.group.add(depth.tips);
+
+        var selected = selectedPole();
+        if (selected) {
+          var sp = point3d(selected);
+          depth.selectedMast.visible = true;
+          depth.selectedMast.position.set(sp.x, sp.y / 2, sp.z);
+          depth.selectedMast.scale.set(1, sp.y, 1);
+          depth.selectedRing.visible = true;
+          depth.selectedRing.position.set(sp.x, 0.11, sp.z);
+        } else {
+          depth.selectedMast.visible = false;
+          depth.selectedRing.visible = false;
+        }
+      }
+
+      function animateDepthScene(time) {
+        if (!depth.ready) return;
+        var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        depth.yaw += (depth.targetYaw - depth.yaw) * 0.08;
+        var drift = reduced ? 0 : Math.sin(time * 0.00022) * 0.045;
+        depth.group.rotation.y = depth.yaw + drift;
+        depth.group.rotation.x = depth.pitch;
+        if (depth.selectedRing) {
+          var pulse = reduced ? 1 : 1 + Math.sin(time * 0.004) * 0.08;
+          depth.selectedRing.scale.set(pulse, pulse, pulse);
+        }
+        depth.renderer.render(depth.scene, depth.camera);
+        requestAnimationFrame(animateDepthScene);
+      }
+
       function drawBaseMap(svg) {
         var mapBg = cssVar("--map-bg", "#08130f");
         var gridColor = cssVar("--map-grid", "#1b3027");
@@ -2085,6 +2459,7 @@
         renderControls();
         renderDisplayControls();
         renderFieldMeta(rows, packets);
+        updateDepthScene(rows, packets);
         drawMap(rows, packets);
         renderTable(rows, packets);
         renderReceipt(selectedPole());
