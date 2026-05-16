@@ -1,5 +1,7 @@
 # VISTA — Imagery-Led Predictive Utility-Pole Risk Profiling for the DTE Grid
 
+**Companion operational demo:** [PoleProof risk receipts and crew packets](https://meliwat.github.io/dte-vista/poleproof/) adds a validation-ready, crew-facing workflow with receipt hashes, guardrails, audit trails, and work-packet exports.
+
 > **Hack Michigan 2026 · DTE Energy challenge — *Utility Pole Risk Profiling:
 > moving from reactive pole maintenance to a predictive, risk-based
 > approach.*** VISTA (Vegetation & Imagery Structural Threat Analytics) is the

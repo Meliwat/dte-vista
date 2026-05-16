@@ -1,0 +1,1392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>PoleProof - Utility Pole Risk Receipts</title>
+  <style>
+    :root {
+      --ink: #141714;
+      --muted: #5d655d;
+      --line: #cbd5c7;
+      --paper: #f6f8f3;
+      --panel: #ffffff;
+      --field: #e8eee4;
+      --green: #247553;
+      --green-dark: #174d38;
+      --amber: #b66f1d;
+      --red: #bd392f;
+      --blue: #2d6796;
+      --violet: #6951a3;
+      --shadow: 0 8px 30px rgba(24, 32, 20, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button, select, input, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(300px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      min-height: 72px;
+      padding: 16px 24px;
+      color: #f8fbf5;
+      background: #111612;
+      border-bottom: 4px solid var(--green);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 7px 0 0;
+      color: #b9c5b5;
+      font-size: 12px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: #e8f2e4;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(160px, 1fr));
+      border-bottom: 1px solid var(--line);
+      background: #fbfcf8;
+    }
+
+    .kpi {
+      min-height: 92px;
+      padding: 16px 18px;
+      border-right: 1px solid var(--line);
+    }
+
+    .kpi:last-child { border-right: 0; }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .kpi em {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-style: normal;
+      line-height: 1.25;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 280px minmax(440px, 1fr) 390px;
+      gap: 0;
+      min-height: calc(100vh - 165px);
+    }
+
+    .panel {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    .panel:last-child { border-right: 0; }
+
+    .controls {
+      padding: 18px 16px 22px;
+      overflow: auto;
+    }
+
+    .section {
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:first-child { padding-top: 0; }
+    .section:last-child { border-bottom: 0; }
+
+    .section h2, .field-title h2, .receipt h2 {
+      margin: 0 0 12px;
+      color: #222721;
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    select, input[type="range"], textarea, input[type="text"] {
+      width: 100%;
+    }
+
+    select, textarea, input[type="text"] {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fbfcf8;
+    }
+
+    select { padding: 0 9px; }
+
+    textarea {
+      min-height: 72px;
+      padding: 9px;
+      resize: vertical;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 36px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fbfcf8;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .chip.active {
+      color: #fff;
+      background: var(--green-dark);
+      border-color: var(--green-dark);
+    }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toggle {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 9px;
+      align-items: start;
+      margin-top: 12px;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .toggle input {
+      margin-top: 1px;
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--green);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .action-btn.secondary {
+      color: var(--ink);
+      background: #e9eee5;
+      border: 1px solid var(--line);
+    }
+
+    .action-btn.warn { background: var(--amber); }
+
+    .source-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .source-list li {
+      display: grid;
+      grid-template-columns: 7px 1fr;
+      gap: 8px;
+      align-items: start;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .source-list i {
+      width: 7px;
+      height: 7px;
+      margin-top: 5px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .field {
+      min-width: 0;
+      background: #edf2e9;
+    }
+
+    .field-wrap {
+      padding: 18px;
+    }
+
+    .field-title {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .field-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .legend span {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      background: var(--green);
+    }
+
+    .map-shell {
+      position: relative;
+      overflow: hidden;
+      min-height: 430px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--field);
+      box-shadow: var(--shadow);
+    }
+
+    #map {
+      display: block;
+      width: 100%;
+      height: min(54vh, 520px);
+      min-height: 430px;
+    }
+
+    .map-tip {
+      position: absolute;
+      z-index: 4;
+      display: none;
+      max-width: 240px;
+      padding: 10px;
+      border: 1px solid #172019;
+      border-radius: 6px;
+      color: #f9fcf6;
+      background: rgba(17, 22, 18, 0.94);
+      font-size: 12px;
+      pointer-events: none;
+      box-shadow: var(--shadow);
+    }
+
+    .worklist {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .worklist-head {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcf8;
+    }
+
+    .worklist-head strong {
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .worklist-head span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      max-height: 380px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5ebe1;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: var(--muted);
+      background: #f4f7f1;
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    tr.row {
+      cursor: pointer;
+    }
+
+    tr.row:hover, tr.row.active {
+      background: #eef6ea;
+    }
+
+    .tier {
+      display: inline-flex;
+      min-width: 72px;
+      justify-content: center;
+      padding: 4px 7px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .tier.critical { background: var(--red); }
+    .tier.high { background: var(--amber); }
+    .tier.elevated { color: #1f231d; background: #e3cf3f; }
+    .tier.routine { background: var(--green); }
+
+    .receipt {
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .receipt-shell {
+      display: grid;
+      gap: 14px;
+    }
+
+    .receipt-card {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .receipt-top {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcf8;
+    }
+
+    .receipt-top h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.15;
+    }
+
+    .receipt-top p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .receipt-body {
+      padding: 16px;
+    }
+
+    .big-score {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .score-box {
+      min-height: 74px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8faf5;
+    }
+
+    .score-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .score-box strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .driver {
+      display: grid;
+      grid-template-columns: 1fr 58px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #e7ece3;
+    }
+
+    .driver:last-child { border-bottom: 0; }
+
+    .driver strong {
+      display: block;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .driver span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .bar {
+      width: 58px;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e2e7de;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .packet-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .packet-line {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #e7ece3;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .packet-line:last-child { border-bottom: 0; }
+
+    .packet-line span {
+      color: var(--muted);
+      font-weight: 850;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    .audit {
+      display: grid;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .audit li {
+      padding: 9px 10px;
+      border-left: 3px solid var(--green);
+      background: #f4f7f1;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .empty {
+      padding: 24px;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .footer {
+      padding: 13px 24px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: #fbfcf8;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .red { color: var(--red); }
+    .amber { color: var(--amber); }
+    .green { color: var(--green); }
+    .blue { color: var(--blue); }
+
+    @media (max-width: 1180px) {
+      .shell {
+        grid-template-columns: 280px minmax(420px, 1fr);
+      }
+
+      .receipt {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar, .field-title, .worklist-head {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions, .legend {
+        justify-content: flex-start;
+      }
+
+      .kpis {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .kpi {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th, td {
+        padding: 8px;
+      }
+    }
+
+    @media print {
+      .controls, .field, .top-actions, .footer { display: none; }
+      .topbar, .receipt { color: #000; background: #fff; }
+      .shell { display: block; }
+      .receipt-card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>POLEPROOF</h1>
+      <p>Utility pole risk receipts, defensible prioritization, and crew-ready work packets</p>
+    </div>
+    <div class="top-actions">
+      <span class="pill">Live build</span>
+      <span class="pill">Public-data demonstrator</span>
+      <span class="pill">No proprietary inputs</span>
+      <span class="pill">Synthetic demo · validation-ready</span>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="PoleProof performance indicators"></section>
+
+  <div class="shell">
+    <aside class="panel controls" aria-label="Controls">
+      <div class="section">
+        <h2>Prioritization</h2>
+        <label for="objective">Objective</label>
+        <select id="objective">
+          <option value="outage">Prevent outage minutes</option>
+          <option value="audit">Maximize audit confidence</option>
+          <option value="crew">Minimize crew friction</option>
+        </select>
+
+        <label>Risk tier</label>
+        <div class="segmented" id="tierControls"></div>
+
+        <label for="county">County</label>
+        <select id="county"></select>
+
+        <label for="minRisk">Minimum risk</label>
+        <input id="minRisk" type="range" min="0" max="95" value="0">
+        <div class="range-row"><span id="minRiskLabel">>= 0%</span><span>risk floor</span></div>
+
+        <label for="budget">Inspection budget</label>
+        <input id="budget" type="range" min="20" max="340" value="110">
+        <div class="range-row"><span id="budgetLabel">110 packets</span><span>current cycle</span></div>
+      </div>
+
+      <div class="section">
+        <h2>Guardrails</h2>
+        <label class="toggle">
+          <input id="confidenceGuard" type="checkbox" checked>
+          <span>Hold back low-confidence poles unless corroborated or high criticality.</span>
+        </label>
+        <label class="toggle">
+          <input id="communityOverlay" type="checkbox" checked>
+          <span>Show resident and field crew corroboration as an overlay, not a training signal.</span>
+        </label>
+        <label class="toggle">
+          <input id="explainability" type="checkbox" checked>
+          <span>Require every packet to include top drivers, sources, and a receipt hash.</span>
+        </label>
+      </div>
+
+      <div class="section">
+        <h2>Exports</h2>
+        <div class="btn-row">
+          <button class="action-btn" id="exportCsv">Export work packets CSV</button>
+          <button class="action-btn secondary" id="exportJson">Export selected receipt JSON</button>
+          <button class="action-btn warn" id="printReceipt">Print receipt</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Source manifest</h2>
+        <ul class="source-list">
+          <li><i></i><span>NOAA-style wind, ice, precipitation, and freeze-thaw normals</span></li>
+          <li><i></i><span>Image-derived canopy, pole lean, crossarm, and right-of-way structure proxies</span></li>
+          <li><i></i><span>FEMA-style flood exposure, drainage, slope, and soil moisture proxies</span></li>
+          <li><i></i><span>Road access, salt exposure, critical facilities, and outage consequence proxies</span></li>
+          <li><i></i><span>Moderated community and crew reports kept outside the model score</span></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="panel field" aria-label="Evidence field and worklist">
+      <div class="field-wrap">
+        <div class="field-title">
+          <div>
+            <h2>Evidence field</h2>
+            <p id="fieldSubtitle">Synthetic Southeast Michigan pole fleet with receipt-level evidence and crew packets.</p>
+          </div>
+          <div class="legend">
+            <span><i class="dot" style="background: var(--red)"></i>Critical</span>
+            <span><i class="dot" style="background: var(--amber)"></i>High</span>
+            <span><i class="dot" style="background: #d9c537"></i>Elevated</span>
+            <span><i class="dot" style="background: var(--green)"></i>Routine</span>
+            <span><i class="dot" style="background: var(--blue)"></i>Packet</span>
+          </div>
+        </div>
+
+        <div class="map-shell">
+          <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Southeast Michigan utility pole risk field"></svg>
+          <div class="map-tip" id="mapTip"></div>
+        </div>
+
+        <section class="worklist" aria-label="Prioritized worklist">
+          <div class="worklist-head">
+            <div>
+              <strong>Prioritized crew packets</strong>
+              <span id="worklistSummary"></span>
+            </div>
+            <span id="cycleSummary"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Receipt</th>
+                  <th>County</th>
+                  <th>Risk</th>
+                  <th>Confidence</th>
+                  <th>Tier</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="workRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="panel receipt" aria-label="Selected risk receipt">
+      <div class="receipt-shell" id="receiptShell"></div>
+    </aside>
+  </div>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script>
+    (function () {
+      var COUNTIES = [
+        "Wayne", "Oakland", "Macomb", "Washtenaw", "Livingston", "St. Clair",
+        "Lapeer", "Genesee", "Monroe", "Ingham", "Saginaw", "Lenawee"
+      ];
+
+      var STATIONS = [
+        ["Detroit Metro", -83.3308, 42.2313],
+        ["Detroit City", -83.0100, 42.4093],
+        ["Lansing", -84.5994, 42.7710],
+        ["Flint", -83.7436, 42.9656],
+        ["Ann Arbor", -83.7456, 42.2230],
+        ["Pontiac", -83.4180, 42.6655],
+        ["Saginaw", -83.9333, 43.4333],
+        ["St. Clair", -82.4900, 42.8200]
+      ];
+
+      var TIERS = [
+        { id: "all", label: "All", min: 0, color: "#247553" },
+        { id: "critical", label: "Critical", min: 0.72, color: "#bd392f" },
+        { id: "high", label: "High", min: 0.48, color: "#b66f1d" },
+        { id: "elevated", label: "Elevated", min: 0.26, color: "#d9c537" }
+      ];
+
+      var state = {
+        objective: "outage",
+        tier: "all",
+        county: "All counties",
+        minRisk: 0,
+        budget: 110,
+        confidenceGuard: true,
+        communityOverlay: true,
+        explainability: true,
+        selectedId: null
+      };
+
+      var els = {
+        kpis: document.getElementById("kpis"),
+        objective: document.getElementById("objective"),
+        tierControls: document.getElementById("tierControls"),
+        county: document.getElementById("county"),
+        minRisk: document.getElementById("minRisk"),
+        minRiskLabel: document.getElementById("minRiskLabel"),
+        budget: document.getElementById("budget"),
+        budgetLabel: document.getElementById("budgetLabel"),
+        confidenceGuard: document.getElementById("confidenceGuard"),
+        communityOverlay: document.getElementById("communityOverlay"),
+        explainability: document.getElementById("explainability"),
+        map: document.getElementById("map"),
+        mapTip: document.getElementById("mapTip"),
+        workRows: document.getElementById("workRows"),
+        worklistSummary: document.getElementById("worklistSummary"),
+        cycleSummary: document.getElementById("cycleSummary"),
+        receiptShell: document.getElementById("receiptShell"),
+        footer: document.getElementById("footer"),
+        exportCsv: document.getElementById("exportCsv"),
+        exportJson: document.getElementById("exportJson"),
+        printReceipt: document.getElementById("printReceipt")
+      };
+
+      function rng(seed) {
+        var t = seed + 0x6D2B79F5;
+        return function () {
+          t += 0x6D2B79F5;
+          var r = Math.imul(t ^ t >>> 15, 1 | t);
+          r ^= r + Math.imul(r ^ r >>> 7, 61 | r);
+          return ((r ^ r >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      var random = rng(20260516);
+
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+      function round(v, n) {
+        var p = Math.pow(10, n || 0);
+        return Math.round(v * p) / p;
+      }
+      function pct(v) { return Math.round(v * 100) + "%"; }
+      function pct1(v) { return (v * 100).toFixed(1) + "%"; }
+      function money(v) { return "$" + Math.round(v).toLocaleString("en-US"); }
+      function esc(s) {
+        return String(s).replace(/[&<>"]/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+        });
+      }
+      function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+      function hashText(s) {
+        var h = 5381;
+        for (var i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+        return "PP-" + (h >>> 0).toString(16).toUpperCase().padStart(8, "0");
+      }
+
+      function lonForCounty(i, jitter) {
+        var col = i % 4;
+        return -84.13 + col * 0.52 + jitter * 0.36;
+      }
+
+      function latForCounty(i, jitter) {
+        var row = Math.floor(i / 4);
+        return 43.36 - row * 0.55 + jitter * 0.34;
+      }
+
+      function nearestStation(lon, lat) {
+        var best = STATIONS[0], dist = Infinity;
+        STATIONS.forEach(function (s) {
+          var d = Math.pow(s[1] - lon, 2) + Math.pow(s[2] - lat, 2);
+          if (d < dist) { best = s; dist = d; }
+        });
+        return best[0];
+      }
+
+      function tierFor(risk) {
+        if (risk >= 0.72) return "critical";
+        if (risk >= 0.48) return "high";
+        if (risk >= 0.26) return "elevated";
+        return "routine";
+      }
+
+      function actionFor(p) {
+        var top = p.drivers[0].key;
+        if (p.risk >= 0.78 && (top === "lean" || top === "rot")) return "Replace / brace";
+        if (top === "vegetation") return "Tree trim";
+        if (top === "flood" || top === "soil") return "Inspect base";
+        if (top === "criticality") return "Protect circuit";
+        if (p.risk >= 0.50) return "Field inspect";
+        return "Monitor";
+      }
+
+      function makeDrivers(features) {
+        var rows = [
+          { key: "vegetation", label: "Canopy contact growth", source: "image-derived NDVI / right-of-way proxy", weight: features.vegetation * 0.30 },
+          { key: "lean", label: "Pole lean and structure signal", source: "image-derived geometry proxy", weight: features.lean * 0.27 },
+          { key: "wind", label: "High wind and ice exposure", source: "NOAA-style climate normals", weight: features.wind * 0.22 },
+          { key: "flood", label: "Flood and drainage exposure", source: "FEMA-style flood / drainage proxy", weight: features.flood * 0.19 },
+          { key: "soil", label: "Soil moisture and base decay", source: "soil drainage / freeze-thaw proxy", weight: features.soil * 0.17 },
+          { key: "criticality", label: "Outage consequence criticality", source: "critical load / customer-density proxy", weight: features.criticality * 0.16 },
+          { key: "access", label: "Crew access friction", source: "road access / work-zone proxy", weight: features.access * 0.11 }
+        ];
+        rows.sort(function (a, b) { return b.weight - a.weight; });
+        return rows;
+      }
+
+      function genPoles() {
+        var rows = [];
+        for (var i = 0; i < 1400; i++) {
+          var countyIndex = i % COUNTIES.length;
+          var county = COUNTIES[countyIndex];
+          var countyRisk = (countyIndex % 3) * 0.08 + (countyIndex === 0 || countyIndex === 1 ? 0.08 : 0);
+          var lon = lonForCounty(countyIndex, random()) + (random() - 0.5) * 0.24;
+          var lat = latForCounty(countyIndex, random()) + (random() - 0.5) * 0.24;
+          var age = Math.pow(random(), 0.75);
+          var vegetation = clamp(random() * 0.68 + (countyIndex % 4 === 1 ? 0.24 : 0) + random() * 0.12, 0, 1);
+          var lean = clamp(Math.pow(random(), 2.1) + (random() > 0.94 ? 0.55 : 0), 0, 1);
+          var wind = clamp(random() * 0.55 + (lat > 42.7 ? 0.20 : 0) + (countyIndex === 8 ? 0.16 : 0), 0, 1);
+          var flood = clamp(Math.pow(random(), 1.6) + (countyIndex === 8 || countyIndex === 5 ? 0.28 : 0), 0, 1);
+          var soil = clamp(random() * 0.72 + flood * 0.22, 0, 1);
+          var access = clamp(random() * 0.72 + (countyIndex === 0 || countyIndex === 2 ? 0.12 : 0), 0, 1);
+          var criticality = clamp(Math.pow(random(), 0.6) + (countyIndex === 0 || countyIndex === 1 ? 0.20 : 0), 0, 1);
+          var report = random() > 0.955 ? (random() > 0.55 ? "verified" : "pending") : "none";
+          var sourceCompleteness = 3 + (random() > 0.25 ? 1 : 0) + (random() > 0.45 ? 1 : 0);
+          var confidence = clamp(0.50 + sourceCompleteness * 0.082 + (report === "verified" ? 0.08 : 0) - (lean > 0.8 ? 0.04 : 0), 0.52, 0.96);
+          var raw = -3.15 + countyRisk +
+            vegetation * 1.45 + lean * 1.55 + wind * 1.00 +
+            flood * 0.90 + soil * 0.75 + age * 0.55 + criticality * 0.35;
+          var risk = clamp(sigmoid(raw), 0.02, 0.97);
+          if (report === "verified") risk = clamp(risk + 0.10, 0.02, 0.99);
+          var drivers = makeDrivers({ vegetation: vegetation, lean: lean, wind: wind, flood: flood, soil: soil, access: access, criticality: criticality });
+          var segment = "C" + String(1 + countyIndex).padStart(2, "0") + "-S" + (1 + Math.floor(i / COUNTIES.length) % 8);
+          var p = {
+            id: "PP" + String(i + 1).padStart(5, "0"),
+            county: county,
+            lon: round(lon, 5),
+            lat: round(lat, 5),
+            segment: segment,
+            station: nearestStation(lon, lat),
+            risk: round(risk, 4),
+            confidence: round(confidence, 4),
+            age: round(age, 3),
+            sourceCompleteness: sourceCompleteness,
+            report: report,
+            criticality: round(criticality, 3),
+            outageMinutes: Math.round(110 + risk * criticality * 980 + random() * 150),
+            truckRollCost: Math.round(185 + random() * 120 + access * 190),
+            drivers: drivers
+          };
+          p.tier = tierFor(p.risk);
+          p.action = actionFor(p);
+          p.reduction = round(clamp(p.risk * (0.22 + drivers[0].weight * 0.72), 0.05, 0.46), 3);
+          p.receipt = "R-" + p.id.slice(2) + "-" + segment.replace("-", "");
+          p.hash = hashText(JSON.stringify({
+            id: p.id,
+            risk: p.risk,
+            confidence: p.confidence,
+            action: p.action,
+            drivers: p.drivers.slice(0, 3).map(function (d) { return [d.key, round(d.weight, 4)]; })
+          }));
+          rows.push(p);
+        }
+        return rows;
+      }
+
+      var POLES = genPoles();
+
+      function priority(p) {
+        var reportBoost = p.report === "verified" ? 0.10 : (p.report === "pending" ? 0.04 : 0);
+        var guard = state.confidenceGuard && p.confidence < 0.67 && p.risk < 0.74 && p.report !== "verified" ? -0.15 : 0;
+        var score = p.risk * 0.62 + p.criticality * 0.15 + p.confidence * 0.10 + reportBoost + guard;
+        if (state.objective === "audit") score = p.risk * 0.50 + p.confidence * 0.28 + reportBoost + guard;
+        if (state.objective === "crew") score = p.risk * 0.54 + (1 - p.truckRollCost / 500) * 0.20 + p.confidence * 0.12 + reportBoost + guard;
+        return clamp(score, 0, 1);
+      }
+
+      function filtered() {
+        var tierMin = TIERS.find(function (t) { return t.id === state.tier; }).min;
+        return POLES.filter(function (p) {
+          if (state.county !== "All counties" && p.county !== state.county) return false;
+          if (p.risk < state.minRisk / 100) return false;
+          if (p.risk < tierMin) return false;
+          if (!state.explainability && p.sourceCompleteness < 4) return false;
+          return true;
+        }).sort(function (a, b) {
+          return priority(b) - priority(a);
+        });
+      }
+
+      function packetRows() {
+        return filtered().slice(0, state.budget);
+      }
+
+      function selectFirstIfNeeded(rows) {
+        if (state.selectedId && rows.some(function (p) { return p.id === state.selectedId; })) return;
+        state.selectedId = rows[0] ? rows[0].id : null;
+      }
+
+      function selectedPole() {
+        return POLES.find(function (p) { return p.id === state.selectedId; });
+      }
+
+      function colorForTier(tier) {
+        return {
+          critical: "#bd392f",
+          high: "#b66f1d",
+          elevated: "#d9c537",
+          routine: "#247553"
+        }[tier] || "#247553";
+      }
+
+      function projectX(lon) {
+        return 42 + ((lon + 84.35) / 2.12) * 676;
+      }
+
+      function projectY(lat) {
+        return 392 - ((lat - 41.65) / 1.96) * 336;
+      }
+
+      function renderKpis(rows, packets) {
+        var avoided = packets.reduce(function (sum, p) { return sum + p.outageMinutes * p.reduction; }, 0);
+        var dollars = packets.reduce(function (sum, p) {
+          return sum + p.outageMinutes * p.reduction * 18 - p.truckRollCost;
+        }, 0);
+        var auditReady = packets.length ? packets.filter(function (p) {
+          return p.confidence >= 0.72 && p.sourceCompleteness >= 4;
+        }).length / packets.length : 0;
+        var atRisk = rows.filter(function (p) { return p.risk >= 0.48; });
+        var captured = packets.filter(function (p) { return p.risk >= 0.48; });
+        var capture = atRisk.length ? captured.length / atRisk.length : 0;
+        var baseline = rows.length ? Math.min(1, packets.length / rows.length) : 0;
+        var lift = baseline ? capture / baseline : 0;
+        var budgetShare = rows.length ? packets.length / rows.length : 0;
+        var kpis = [
+          ["Capture @ budget", pct1(capture), packets.length.toLocaleString("en-US") + " packets / " + pct1(budgetShare) + " of visible fleet"],
+          ["Lift vs age-cycle", lift.toFixed(2) + "x", "synthetic baseline using same inspection budget"],
+          ["Net benefit / cycle", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes"],
+          ["Audit-ready receipts", pct(auditReady), "source-complete, high-confidence crew packets"],
+          ["Validation status", "Synthetic", "ready for DTE holdout labels and pilot scoring"]
+        ];
+        els.kpis.innerHTML = kpis.map(function (k) {
+          return '<div class="kpi"><span>' + esc(k[0]) + '</span><strong>' + esc(k[1]) +
+            '</strong><em>' + esc(k[2]) + '</em></div>';
+        }).join("");
+      }
+
+      function renderControls() {
+        els.tierControls.innerHTML = TIERS.map(function (t) {
+          return '<button class="chip ' + (state.tier === t.id ? "active" : "") +
+            '" data-tier="' + t.id + '">' + esc(t.label) + '</button>';
+        }).join("");
+        Array.prototype.forEach.call(els.tierControls.querySelectorAll("button"), function (b) {
+          b.addEventListener("click", function () {
+            state.tier = b.getAttribute("data-tier");
+            render();
+          });
+        });
+
+        els.county.innerHTML = ['<option>All counties</option>'].concat(COUNTIES.map(function (c) {
+          return '<option>' + esc(c) + '</option>';
+        })).join("");
+        els.county.value = state.county;
+        els.minRisk.value = state.minRisk;
+        els.budget.value = state.budget;
+        els.minRiskLabel.textContent = ">= " + state.minRisk + "%";
+        els.budgetLabel.textContent = state.budget + " packets";
+        els.objective.value = state.objective;
+        els.confidenceGuard.checked = state.confidenceGuard;
+        els.communityOverlay.checked = state.communityOverlay;
+        els.explainability.checked = state.explainability;
+      }
+
+      function drawBaseMap(svg) {
+        var bg = '<rect x="0" y="0" width="760" height="430" fill="#e8eee4"></rect>';
+        var water = '<path d="M657 41 C725 88 735 160 704 218 C686 252 708 301 675 352 C654 384 619 394 604 360 C588 323 610 274 594 235 C571 179 604 88 657 41Z" fill="#cbdfe7" opacity="0.85"></path>';
+        var grid = "";
+        for (var x = 70; x < 720; x += 80) grid += '<path d="M' + x + ' 40 L' + (x - 36) + ' 392" stroke="#d8e0d3" stroke-width="1"></path>';
+        for (var y = 64; y < 390; y += 54) grid += '<path d="M42 ' + y + ' L718 ' + (y + 22) + '" stroke="#d8e0d3" stroke-width="1"></path>';
+        var countyLabels = COUNTIES.map(function (c, i) {
+          var x = projectX(lonForCounty(i, 0.45));
+          var y = projectY(latForCounty(i, 0.45));
+          return '<text x="' + x + '" y="' + y + '" font-size="9" fill="#6b7468" font-weight="800">' + esc(c.toUpperCase()) + '</text>';
+        }).join("");
+        var stations = STATIONS.map(function (s) {
+          return '<g><circle cx="' + projectX(s[1]) + '" cy="' + projectY(s[2]) + '" r="4" fill="#2d6796"></circle>' +
+            '<text x="' + (projectX(s[1]) + 7) + '" y="' + (projectY(s[2]) + 4) + '" font-size="9" fill="#2d6796" font-weight="800">' + esc(s[0]) + '</text></g>';
+        }).join("");
+        svg.innerHTML = bg + water + grid + countyLabels + stations;
+      }
+
+      function drawMap(rows, packets) {
+        var svg = els.map;
+        drawBaseMap(svg);
+        var packetIds = {};
+        packets.forEach(function (p) { packetIds[p.id] = true; });
+        var selected = state.selectedId;
+        var shown = rows.slice(0, 900);
+        var circles = shown.map(function (p) {
+          var x = projectX(p.lon), y = projectY(p.lat);
+          var inPacket = packetIds[p.id];
+          var r = inPacket ? 5.4 : 3.2;
+          var stroke = p.id === selected ? "#111612" : (inPacket ? "#2d6796" : "#ffffff");
+          var sw = p.id === selected ? 3 : (inPacket ? 2 : 0.7);
+          return '<circle class="node" tabindex="0" data-id="' + p.id + '" cx="' + x.toFixed(2) +
+            '" cy="' + y.toFixed(2) + '" r="' + r + '" fill="' + colorForTier(p.tier) +
+            '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + (inPacket ? "0.96" : "0.68") + '"></circle>';
+        }).join("");
+        var reports = state.communityOverlay ? shown.filter(function (p) { return p.report !== "none"; }).map(function (p) {
+          var x = projectX(p.lon), y = projectY(p.lat);
+          return '<rect class="report" data-id="' + p.id + '" x="' + (x - 4) + '" y="' + (y - 4) +
+            '" width="8" height="8" transform="rotate(45 ' + x + ' ' + y + ')" fill="#ffffff" stroke="#6951a3" stroke-width="2"></rect>';
+        }).join("") : "";
+        svg.insertAdjacentHTML("beforeend", reports + circles);
+
+        Array.prototype.forEach.call(svg.querySelectorAll(".node,.report"), function (n) {
+          n.addEventListener("mousemove", function (e) {
+            var p = POLES.find(function (x) { return x.id === n.getAttribute("data-id"); });
+            showTip(e, p);
+          });
+          n.addEventListener("mouseleave", hideTip);
+          n.addEventListener("click", function () {
+            state.selectedId = n.getAttribute("data-id");
+            render();
+          });
+          n.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              state.selectedId = n.getAttribute("data-id");
+              render();
+            }
+          });
+        });
+      }
+
+      function showTip(e, p) {
+        if (!p) return;
+        els.mapTip.style.display = "block";
+        els.mapTip.style.left = Math.min(e.offsetX + 14, els.map.clientWidth - 250) + "px";
+        els.mapTip.style.top = Math.max(8, e.offsetY + 14) + "px";
+        els.mapTip.innerHTML = '<strong>' + esc(p.id) + ' ' + esc(p.county) + '</strong><br>' +
+          esc(p.receipt) + '<br>Risk ' + pct1(p.risk) + ' / confidence ' + pct1(p.confidence) +
+          '<br>' + esc(p.action);
+      }
+
+      function hideTip() {
+        els.mapTip.style.display = "none";
+      }
+
+      function renderTable(rows, packets) {
+        var packetIds = {};
+        packets.forEach(function (p) { packetIds[p.id] = true; });
+        els.workRows.innerHTML = rows.slice(0, Math.max(state.budget, 80)).map(function (p, i) {
+          var cls = "row" + (p.id === state.selectedId ? " active" : "");
+          return '<tr class="' + cls + '" tabindex="0" data-id="' + p.id + '">' +
+            '<td>' + (i + 1) + (packetIds[p.id] ? ' <span class="blue">packet</span>' : "") + '</td>' +
+            '<td>' + esc(p.receipt) + '</td>' +
+            '<td>' + esc(p.county) + '</td>' +
+            '<td>' + pct1(p.risk) + '</td>' +
+            '<td>' + pct1(p.confidence) + '</td>' +
+            '<td><span class="tier ' + p.tier + '">' + esc(p.tier.toUpperCase()) + '</span></td>' +
+            '<td>' + esc(p.action) + '</td>' +
+          '</tr>';
+        }).join("");
+        Array.prototype.forEach.call(els.workRows.querySelectorAll("tr"), function (tr) {
+          tr.addEventListener("click", function () {
+            state.selectedId = tr.getAttribute("data-id");
+            render();
+          });
+          tr.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              state.selectedId = tr.getAttribute("data-id");
+              render();
+            }
+          });
+        });
+        els.worklistSummary.textContent = " - " + rows.length.toLocaleString("en-US") + " receipts match current filters";
+        els.cycleSummary.textContent = packets.length + " active packets";
+      }
+
+      function renderReceipt(p) {
+        if (!p) {
+          els.receiptShell.innerHTML = '<div class="empty">No pole matches the current filters.</div>';
+          return;
+        }
+        var topDrivers = p.drivers.slice(0, 5);
+        var drivers = topDrivers.map(function (d) {
+          return '<div class="driver"><div><strong>' + esc(d.label) + '</strong><span>' +
+            esc(d.source) + '</span></div><div class="bar"><i style="width:' + pct(clamp(d.weight / 0.30, 0.06, 1)) +
+            '"></i></div></div>';
+        }).join("");
+        var nextWindow = p.risk >= 0.72 ? "0-14 days" : (p.risk >= 0.48 ? "15-45 days" : "next cycle");
+        var materials = p.action === "Tree trim" ? "trim crew, ROW permit check, chipper slot" :
+          p.action === "Replace / brace" ? "class-matched pole, brace kit, transfer window" :
+          p.action === "Inspect base" ? "probe, bore kit, base wrap, soil photo set" :
+          "standard inspection kit, photo set, handheld GPS";
+        var audit = [
+          "Risk score is separated from resident reports; reports can corroborate priority but do not train the model.",
+          "Low-confidence guardrail can hold a pole out of the crew packet unless risk, criticality, or verification clears the threshold.",
+          "Receipt hash locks the visible evidence, top drivers, action, and score used for this work cycle.",
+          "Post-work follow-up compares before/after condition and expected risk reduction for accountability."
+        ];
+        els.receiptShell.innerHTML =
+          '<div class="receipt-card">' +
+            '<div class="receipt-top">' +
+              '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
+              '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Receipt hash ' + esc(p.hash) + '</p>' +
+            '</div>' +
+            '<div class="receipt-body">' +
+              '<div class="big-score">' +
+                '<div class="score-box"><span>Risk</span><strong class="' + (p.risk >= 0.72 ? "red" : p.risk >= 0.48 ? "amber" : "green") + '">' + pct1(p.risk) + '</strong></div>' +
+                '<div class="score-box"><span>Confidence</span><strong>' + pct1(p.confidence) + '</strong></div>' +
+                '<div class="score-box"><span>Expected drop</span><strong>' + pct1(p.reduction) + '</strong></div>' +
+                '<div class="score-box"><span>Outage minutes</span><strong>' + p.outageMinutes.toLocaleString("en-US") + '</strong></div>' +
+              '</div>' +
+              '<h2>Evidence drivers</h2>' + drivers +
+            '</div>' +
+          '</div>' +
+          '<div class="receipt-card">' +
+            '<div class="receipt-top"><h3>Crew packet</h3><p>' + esc(p.action) + ' / target window ' + esc(nextWindow) + '</p></div>' +
+            '<div class="receipt-body packet-grid">' +
+              '<div class="packet-line"><span>Job code</span><strong>' + esc(jobCode(p)) + '</strong></div>' +
+              '<div class="packet-line"><span>Materials</span><strong>' + esc(materials) + '</strong></div>' +
+              '<div class="packet-line"><span>Checklist</span><strong>verify pole ID, capture four photos, inspect base, log driver evidence, close receipt with disposition</strong></div>' +
+              '<div class="packet-line"><span>Economics</span><strong>' + money(p.outageMinutes * p.reduction * 18) + ' avoided outage value before truck-roll cost</strong></div>' +
+              '<div class="packet-line"><span>Report</span><strong>' + esc(p.report === "none" ? "no corroborating field report" : p.report + " corroborating report") + '</strong></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="receipt-card">' +
+            '<div class="receipt-top"><h3>Decision audit</h3><p>Review trail for judges, supervisors, and field crews.</p></div>' +
+            '<div class="receipt-body"><ul class="audit">' + audit.map(function (a) {
+              return '<li>' + esc(a) + '</li>';
+            }).join("") + '</ul></div>' +
+          '</div>';
+      }
+
+      function jobCode(p) {
+        var prefix = p.action === "Tree trim" ? "VEG" :
+          p.action === "Replace / brace" ? "REP" :
+          p.action === "Inspect base" ? "BAS" :
+          p.action === "Protect circuit" ? "CRT" : "INS";
+        return prefix + "-" + p.segment + "-" + p.id.slice(-3);
+      }
+
+      function exportCsv() {
+        var rows = packetRows();
+        var head = ["rank", "receipt", "pole_id", "county", "segment", "risk", "confidence", "tier", "action", "expected_risk_drop", "top_driver", "receipt_hash"];
+        var lines = [head.join(",")];
+        rows.forEach(function (p, i) {
+          lines.push([
+            i + 1, p.receipt, p.id, p.county, p.segment, p.risk, p.confidence, p.tier,
+            p.action, p.reduction, p.drivers[0].label, p.hash
+          ].map(csv).join(","));
+        });
+        download("poleproof_work_packets.csv", lines.join("\n"), "text/csv");
+      }
+
+      function exportJson() {
+        var p = selectedPole();
+        if (!p) return;
+        var payload = {
+          exported_at: new Date().toISOString(),
+          app: "PoleProof",
+          receipt: p
+        };
+        download("poleproof_" + p.receipt + ".json", JSON.stringify(payload, null, 2), "application/json");
+      }
+
+      function csv(v) {
+        var s = String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+
+      function download(name, text, type) {
+        var blob = new Blob([text], { type: type });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function renderFooter() {
+        els.footer.innerHTML = '<strong>Provenance.</strong> Deterministic synthetic DTE-style pole fleet generated locally: ' +
+          POLES.length.toLocaleString("en-US") + ' poles across ' + COUNTIES.length +
+          ' Southeast Michigan counties. Public-data proxies are named per receipt; resident and crew reports are overlays only, never model training inputs. ' +
+          '<strong>Validation-ready label.</strong> KPI values are synthetic-demo estimates until checked against real DTE inspection, outage, and work-order outcomes. Generated 2026-05-16.';
+      }
+
+      function render() {
+        var rows = filtered();
+        var packets = rows.slice(0, state.budget);
+        selectFirstIfNeeded(rows);
+        renderKpis(rows, packets);
+        renderControls();
+        drawMap(rows, packets);
+        renderTable(rows, packets);
+        renderReceipt(selectedPole());
+        renderFooter();
+      }
+
+      els.objective.addEventListener("change", function () {
+        state.objective = els.objective.value;
+        render();
+      });
+      els.county.addEventListener("change", function () {
+        state.county = els.county.value;
+        render();
+      });
+      els.minRisk.addEventListener("input", function () {
+        state.minRisk = +els.minRisk.value;
+        render();
+      });
+      els.budget.addEventListener("input", function () {
+        state.budget = +els.budget.value;
+        render();
+      });
+      els.confidenceGuard.addEventListener("change", function () {
+        state.confidenceGuard = els.confidenceGuard.checked;
+        render();
+      });
+      els.communityOverlay.addEventListener("change", function () {
+        state.communityOverlay = els.communityOverlay.checked;
+        render();
+      });
+      els.explainability.addEventListener("change", function () {
+        state.explainability = els.explainability.checked;
+        render();
+      });
+      els.exportCsv.addEventListener("click", exportCsv);
+      els.exportJson.addEventListener("click", exportJson);
+      els.printReceipt.addEventListener("click", function () { window.print(); });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
