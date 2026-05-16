@@ -1071,15 +1071,6 @@
       text-transform: uppercase;
     }
 
-    .footer {
-      padding: 13px 24px;
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-      background: #fbfcf8;
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
     .red { color: var(--red); }
     .amber { color: var(--amber); }
     .green { color: var(--green); }
@@ -1721,8 +1712,7 @@
       background: var(--panel-2);
     }
 
-    .empty,
-    .footer {
+    .empty {
       color: var(--muted);
       background: var(--panel-2);
       border-color: var(--line);
@@ -2668,8 +2658,63 @@
       }
     }
 
+    :root[data-screen="map"] .shell {
+      height: var(--map-screen-h, calc(100dvh - 168px));
+      min-height: 460px;
+    }
+
+    :root[data-screen="map"] .field,
+    :root[data-screen="map"] .field-wrap {
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    :root[data-screen="map"] .field-wrap {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    :root[data-screen="map"] .field-title {
+      margin: 0;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    :root[data-screen="map"] .field-visuals {
+      flex: 1;
+      min-height: 0;
+      display: block;
+    }
+
+    :root[data-screen="map"] .map-shell,
+    :root[data-screen="map"] .depth-scene,
+    :root[data-screen="map"] #riskDepthCanvas,
+    :root[data-screen="map"] #realMap,
+    :root[data-screen="map"] #map {
+      height: 100%;
+      min-height: 0;
+    }
+
+    :root[data-screen="map"] .map-shell {
+      border: 0;
+      border-radius: 0;
+    }
+
+    @media (max-width: 560px) {
+      :root[data-screen="map"] .shell {
+        min-height: 420px;
+      }
+
+      :root[data-screen="map"] .field-title {
+        padding: 12px 20px;
+      }
+    }
+
     @media print {
-      .controls, .field, .top-actions, .footer { display: none; }
+      .controls, .field, .top-actions { display: none; }
       .topbar, .receipt { color: #000; background: #fff; }
       .shell { display: block; }
       .receipt-card { box-shadow: none; }
@@ -2789,7 +2834,7 @@
         <div class="field-title">
           <div>
             <h2>Evidence field</h2>
-            <p id="fieldSubtitle">Real Southeast Michigan map with pole work packets, receipt-level evidence, and nearby Street View handoff.</p>
+            <p id="fieldSubtitle">Real Michigan map with statewide pole work packets, receipt-level evidence, and nearby Street View handoff.</p>
             <div class="field-meta" id="fieldMeta"></div>
           </div>
           <div class="field-tools">
@@ -2812,8 +2857,8 @@
           </section>
 
           <div class="map-shell" id="mapShell">
-            <div id="realMap" aria-label="Real map of Southeast Michigan pole work packets"></div>
-            <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Southeast Michigan utility pole risk field"></svg>
+            <div id="realMap" aria-label="Real map of Michigan pole work packets"></div>
+            <svg id="map" viewBox="0 0 760 430" role="img" aria-label="Michigan utility pole risk field"></svg>
             <div class="map-tip" id="mapTip"></div>
           </div>
         </div>
@@ -2855,8 +2900,6 @@
     </aside>
   </div>
 
-  <footer class="footer" id="footer"></footer>
-
   <nav class="bottom-tabs" id="bottomTabs" aria-label="Mobile screens"></nav>
 
   <div class="command-overlay" id="commandOverlay" hidden>
@@ -2871,10 +2914,101 @@
 
   <script>
     (function () {
-      var COUNTIES = [
-        "Wayne", "Oakland", "Macomb", "Washtenaw", "Livingston", "St. Clair",
-        "Lapeer", "Genesee", "Monroe", "Ingham", "Saginaw", "Lenawee"
-      ];
+      var MAP_BOUNDS = { minLon: -90.45, maxLon: -82.05, minLat: 41.65, maxLat: 48.35 };
+
+      var COUNTY_AREAS = [
+        "Alcona|44.68|-83.59|0.42|north",
+        "Alger|46.41|-86.65|0.52|up",
+        "Allegan|42.53|-85.85|0.38|west",
+        "Alpena|45.06|-83.43|0.42|lake",
+        "Antrim|44.98|-85.21|0.36|north",
+        "Arenac|43.98|-83.84|0.34|lake",
+        "Baraga|46.80|-88.48|0.58|up",
+        "Barry|42.65|-85.29|0.34|farm",
+        "Bay|43.60|-83.89|0.32|lake",
+        "Benzie|44.62|-86.10|0.34|lake",
+        "Berrien|42.10|-86.48|0.34|lake",
+        "Branch|41.92|-85.06|0.30|farm",
+        "Calhoun|42.25|-85.01|0.34|urban",
+        "Cass|41.91|-86.01|0.32|farm",
+        "Charlevoix|45.31|-85.26|0.34|lake",
+        "Cheboygan|45.65|-84.47|0.42|north",
+        "Chippewa|46.49|-84.35|0.58|up",
+        "Clare|43.99|-84.85|0.34|north",
+        "Clinton|42.95|-84.60|0.32|farm",
+        "Crawford|44.68|-84.61|0.42|north",
+        "Delta|45.78|-87.08|0.54|up",
+        "Dickinson|45.99|-87.87|0.50|up",
+        "Eaton|42.59|-84.84|0.32|urban",
+        "Emmet|45.48|-84.92|0.36|lake",
+        "Genesee|43.02|-83.70|0.32|urban",
+        "Gladwin|43.99|-84.39|0.34|north",
+        "Gogebic|46.45|-89.70|0.58|up",
+        "Grand Traverse|44.76|-85.62|0.34|lake",
+        "Gratiot|43.29|-84.60|0.34|farm",
+        "Hillsdale|41.92|-84.63|0.30|farm",
+        "Houghton|47.12|-88.57|0.56|up",
+        "Huron|43.80|-83.00|0.36|thumb",
+        "Ingham|42.64|-84.55|0.32|urban",
+        "Ionia|42.94|-85.07|0.34|farm",
+        "Iosco|44.31|-83.64|0.36|lake",
+        "Iron|46.22|-88.53|0.54|up",
+        "Isabella|43.64|-84.84|0.34|farm",
+        "Jackson|42.25|-84.40|0.34|urban",
+        "Kalamazoo|42.29|-85.59|0.32|urban",
+        "Kalkaska|44.69|-85.09|0.38|north",
+        "Kent|43.00|-85.55|0.36|urban",
+        "Keweenaw|47.47|-88.16|0.42|up",
+        "Lake|43.99|-85.80|0.34|north",
+        "Lapeer|43.05|-83.31|0.32|farm",
+        "Leelanau|45.03|-85.76|0.30|lake",
+        "Lenawee|41.90|-84.05|0.32|farm",
+        "Livingston|42.60|-83.92|0.34|urban",
+        "Luce|46.47|-85.52|0.54|up",
+        "Mackinac|45.90|-84.73|0.48|up",
+        "Macomb|42.67|-82.91|0.28|urban",
+        "Manistee|44.24|-86.32|0.34|lake",
+        "Marquette|46.55|-87.40|0.60|up",
+        "Mason|44.02|-86.34|0.34|lake",
+        "Mecosta|43.64|-85.32|0.34|north",
+        "Menominee|45.58|-87.56|0.48|up",
+        "Midland|43.62|-84.23|0.34|urban",
+        "Missaukee|44.34|-85.09|0.34|north",
+        "Monroe|41.93|-83.50|0.32|lake",
+        "Montcalm|43.31|-85.14|0.34|farm",
+        "Montmorency|45.03|-84.13|0.40|north",
+        "Muskegon|43.29|-86.15|0.34|lake",
+        "Newaygo|43.55|-85.80|0.36|north",
+        "Oakland|42.66|-83.38|0.34|urban",
+        "Oceana|43.64|-86.29|0.34|lake",
+        "Ogemaw|44.33|-84.13|0.36|north",
+        "Ontonagon|46.87|-89.31|0.58|up",
+        "Osceola|43.99|-85.33|0.34|north",
+        "Oscoda|44.68|-84.13|0.40|north",
+        "Otsego|45.02|-84.67|0.38|north",
+        "Ottawa|42.95|-86.05|0.34|lake",
+        "Presque Isle|45.38|-83.81|0.38|lake",
+        "Roscommon|44.34|-84.61|0.36|north",
+        "Saginaw|43.42|-84.00|0.34|urban",
+        "St. Clair|42.93|-82.67|0.34|lake",
+        "St. Joseph|41.92|-85.53|0.32|farm",
+        "Sanilac|43.42|-82.83|0.36|thumb",
+        "Schoolcraft|46.20|-86.20|0.54|up",
+        "Shiawassee|42.95|-84.15|0.34|farm",
+        "Tuscola|43.49|-83.40|0.36|thumb",
+        "Van Buren|42.22|-86.02|0.34|lake",
+        "Washtenaw|42.25|-83.84|0.34|urban",
+        "Wayne|42.28|-83.26|0.34|urban",
+        "Wexford|44.33|-85.58|0.34|north"
+      ].map(function (row) {
+        var p = row.split("|");
+        return { name: p[0], lat: Number(p[1]), lon: Number(p[2]), spread: Number(p[3]), zone: p[4] };
+      });
+
+      var COUNTIES = COUNTY_AREAS.map(function (c) { return c.name; });
+      var COUNTY_LOOKUP = {};
+      COUNTY_AREAS.forEach(function (c) { COUNTY_LOOKUP[c.name] = c; });
+      var POLE_COUNT = COUNTIES.length * 48;
 
       var STATIONS = [
         ["Detroit Metro", -83.3308, 42.2313],
@@ -2884,7 +3018,18 @@
         ["Ann Arbor", -83.7456, 42.2230],
         ["Pontiac", -83.4180, 42.6655],
         ["Saginaw", -83.9333, 43.4333],
-        ["St. Clair", -82.4900, 42.8200]
+        ["St. Clair", -82.4900, 42.8200],
+        ["Grand Rapids", -85.6681, 42.9634],
+        ["Muskegon", -86.2389, 43.2342],
+        ["Kalamazoo", -85.5872, 42.2917],
+        ["Traverse City", -85.6206, 44.7631],
+        ["Gaylord", -84.6748, 45.0275],
+        ["Alpena", -83.4327, 45.0617],
+        ["Sault Ste. Marie", -84.3472, 46.4953],
+        ["Marquette", -87.3954, 46.5436],
+        ["Escanaba", -87.0646, 45.7452],
+        ["Houghton", -88.5690, 47.1211],
+        ["Ironwood", -90.1710, 46.4547]
       ];
 
       var STREET_CONTEXTS = {
@@ -2988,6 +3133,9 @@
       }
 
       var els = {
+        topbar: document.querySelector(".topbar"),
+        screenSummary: document.querySelector(".screen-summary"),
+        fieldTitle: document.querySelector(".field-title"),
         primaryNav: document.getElementById("primaryNav"),
         bottomTabs: document.getElementById("bottomTabs"),
         commandOpen: document.getElementById("commandOpen"),
@@ -3029,7 +3177,6 @@
         fieldMeta: document.getElementById("fieldMeta"),
         receiptStatus: document.getElementById("receiptStatus"),
         receiptShell: document.getElementById("receiptShell"),
-        footer: document.getElementById("footer"),
         exportCsv: document.getElementById("exportCsv"),
         exportJson: document.getElementById("exportJson"),
         printReceipt: document.getElementById("printReceipt")
@@ -3087,18 +3234,32 @@
         return COLOR_HEX_CACHE[key];
       }
 
+      function countyAreaFor(county) {
+        return COUNTY_LOOKUP[county] || COUNTY_AREAS[0];
+      }
+
       function lonForCounty(i, jitter) {
-        var col = i % 4;
-        return -84.13 + col * 0.52 + jitter * 0.36;
+        var area = COUNTY_AREAS[i % COUNTY_AREAS.length];
+        return clamp(area.lon + (jitter - 0.5) * area.spread, MAP_BOUNDS.minLon, MAP_BOUNDS.maxLon);
       }
 
       function latForCounty(i, jitter) {
-        var row = Math.floor(i / 4);
-        return 43.36 - row * 0.55 + jitter * 0.34;
+        var area = COUNTY_AREAS[i % COUNTY_AREAS.length];
+        return clamp(area.lat + (jitter - 0.5) * area.spread * 0.72, MAP_BOUNDS.minLat, MAP_BOUNDS.maxLat);
       }
 
       function streetContextFor(county, sequence) {
-        var choices = STREET_CONTEXTS[county] || STREET_CONTEXTS.Wayne;
+        var choices = STREET_CONTEXTS[county];
+        if (!choices) {
+          var area = countyAreaFor(county);
+          var drift = (sequence % 5) - 2;
+          return {
+            label: "Main road, " + county + " County",
+            lat: round(area.lat + drift * 0.0024, 5),
+            lon: round(area.lon - drift * 0.0028, 5),
+            heading: (sequence * 37) % 360
+          };
+        }
         var base = choices[sequence % choices.length];
         return {
           label: base.label,
@@ -3150,20 +3311,23 @@
 
       function genPoles() {
         var rows = [];
-        for (var i = 0; i < 1400; i++) {
+        for (var i = 0; i < POLE_COUNT; i++) {
           var countyIndex = i % COUNTIES.length;
           var county = COUNTIES[countyIndex];
-          var countyRisk = (countyIndex % 3) * 0.08 + (countyIndex === 0 || countyIndex === 1 ? 0.08 : 0);
-          var lon = lonForCounty(countyIndex, random()) + (random() - 0.5) * 0.24;
-          var lat = latForCounty(countyIndex, random()) + (random() - 0.5) * 0.24;
+          var area = COUNTY_AREAS[countyIndex];
+          var zoneRisk = { urban: 0.10, up: 0.11, lake: 0.08, north: 0.07, thumb: 0.08, west: 0.05, farm: 0.04 }[area.zone] || 0.05;
+          var countyRisk = zoneRisk + (countyIndex % 5) * 0.018;
+          var lon = lonForCounty(countyIndex, random());
+          var lat = latForCounty(countyIndex, random());
           var age = Math.pow(random(), 0.75);
-          var vegetation = clamp(random() * 0.68 + (countyIndex % 4 === 1 ? 0.24 : 0) + random() * 0.12, 0, 1);
+          var wooded = area.zone === "north" || area.zone === "up" || area.zone === "lake";
+          var vegetation = clamp(random() * 0.62 + (wooded ? 0.20 : 0) + random() * 0.12, 0, 1);
           var lean = clamp(Math.pow(random(), 2.1) + (random() > 0.94 ? 0.55 : 0), 0, 1);
-          var wind = clamp(random() * 0.55 + (lat > 42.7 ? 0.20 : 0) + (countyIndex === 8 ? 0.16 : 0), 0, 1);
-          var flood = clamp(Math.pow(random(), 1.6) + (countyIndex === 8 || countyIndex === 5 ? 0.28 : 0), 0, 1);
+          var wind = clamp(random() * 0.52 + (lat > 44.3 ? 0.18 : 0) + (area.zone === "up" ? 0.18 : 0) + (area.zone === "lake" || area.zone === "thumb" ? 0.10 : 0), 0, 1);
+          var flood = clamp(Math.pow(random(), 1.6) + (area.zone === "lake" || county === "Monroe" || county === "Bay" || county === "St. Clair" ? 0.18 : 0), 0, 1);
           var soil = clamp(random() * 0.72 + flood * 0.22, 0, 1);
-          var access = clamp(random() * 0.72 + (countyIndex === 0 || countyIndex === 2 ? 0.12 : 0), 0, 1);
-          var criticality = clamp(Math.pow(random(), 0.6) + (countyIndex === 0 || countyIndex === 1 ? 0.20 : 0), 0, 1);
+          var access = clamp(random() * 0.66 + (area.zone === "up" || area.zone === "north" ? 0.18 : 0) + (area.zone === "urban" ? 0.06 : 0), 0, 1);
+          var criticality = clamp(Math.pow(random(), 0.6) + (area.zone === "urban" ? 0.22 : area.zone === "west" ? 0.08 : 0), 0, 1);
           var report = random() > 0.955 ? (random() > 0.55 ? "verified" : "pending") : "none";
           var sourceCompleteness = 3 + (random() > 0.25 ? 1 : 0) + (random() > 0.45 ? 1 : 0);
           var confidence = clamp(0.50 + sourceCompleteness * 0.082 + (report === "verified" ? 0.08 : 0) - (lean > 0.8 ? 0.04 : 0), 0.52, 0.96);
@@ -3293,6 +3457,20 @@
         els.screenAction.innerHTML = '<button class="action-btn" type="button" data-command="' + screen.command + '">' + esc(screen.primary) + '</button>';
       }
 
+      function visibleHeight(el) {
+        if (!el || el.hidden) return 0;
+        var styles = getComputedStyle(el);
+        if (styles.display === "none" || styles.visibility === "hidden") return 0;
+        return el.getBoundingClientRect().height;
+      }
+
+      function updateMapViewportSize() {
+        var bottomTabs = visibleHeight(els.bottomTabs) && getComputedStyle(els.bottomTabs).position === "fixed" ? visibleHeight(els.bottomTabs) : 0;
+        var chrome = visibleHeight(els.topbar) + visibleHeight(els.opsBanner) + visibleHeight(els.kpis) + visibleHeight(els.screenSummary) + bottomTabs;
+        var height = Math.max(360, Math.round(window.innerHeight - chrome));
+        document.documentElement.style.setProperty("--map-screen-h", height + "px");
+      }
+
       function renderOverview(rows, packets) {
         var selected = selectedPole();
         var critical = rows.filter(function (p) { return p.tier === "critical"; }).length;
@@ -3302,7 +3480,7 @@
         els.overviewScreen.innerHTML =
           '<div class="overview-grid">' +
             '<div class="overview-lead">' +
-              '<h2>Southeast Michigan pole work at a glance.</h2>' +
+              '<h2>Michigan statewide pole work at a glance.</h2>' +
               '<p>The current cycle is organized around location, urgency, and a receipt that explains why a pole was selected.</p>' +
               '<div class="overview-list">' +
                 '<div class="overview-row"><span>Selected</span><strong>' + esc(selectedLabel) + '</strong></div>' +
@@ -3332,12 +3510,20 @@
         }[tier] || cssVar("--green", "#37b37f");
       }
 
+      function normalizedLon(lon) {
+        return clamp((lon - MAP_BOUNDS.minLon) / (MAP_BOUNDS.maxLon - MAP_BOUNDS.minLon), 0, 1);
+      }
+
+      function normalizedLat(lat) {
+        return clamp((lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat), 0, 1);
+      }
+
       function projectX(lon) {
-        return 42 + ((lon + 84.35) / 2.12) * 676;
+        return 42 + normalizedLon(lon) * 676;
       }
 
       function projectY(lat) {
-        return 392 - ((lat - 41.65) / 1.96) * 336;
+        return 392 - normalizedLat(lat) * 336;
       }
 
       function renderKpis(rows, packets) {
@@ -3458,11 +3644,14 @@
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var avgRisk = packets.length ? packets.reduce(function (sum, p) { return sum + p.risk; }, 0) / packets.length : 0;
         var counties = {};
-        packets.forEach(function (p) { counties[p.county] = true; });
+        rows.forEach(function (p) { counties[p.county] = true; });
+        var packetCounties = {};
+        packets.forEach(function (p) { packetCounties[p.county] = true; });
         els.fieldMeta.innerHTML =
           '<span>' + packets.length + ' packets selected</span>' +
           '<span>' + rows.length.toLocaleString("en-US") + ' filtered receipts</span>' +
-          '<span>' + Object.keys(counties).length + ' counties</span>' +
+          '<span>' + Object.keys(counties).length + ' counties in scope</span>' +
+          '<span>' + Object.keys(packetCounties).length + ' packet counties</span>' +
           '<span>avg packet risk ' + pct1(avgRisk) + '</span>';
       }
 
@@ -3650,7 +3839,7 @@
         realMap.map = L.map(els.realMap, {
           zoomControl: false,
           scrollWheelZoom: false
-        }).setView([42.68, -83.45], 8);
+        }).setView([44.55, -85.85], 6);
         L.control.zoom({ position: "bottomright" }).addTo(realMap.map);
         L.tileLayer(OSM_TILE_URL, {
           maxZoom: 19,
@@ -3664,6 +3853,27 @@
         }, 0);
       }
 
+      function statewideContextRows(rows, packetIds, limit) {
+        var context = [];
+        var used = {};
+        var counties = {};
+        rows.forEach(function (p) {
+          if (context.length >= limit) return;
+          if (packetIds[p.id] || counties[p.county]) return;
+          counties[p.county] = true;
+          used[p.id] = true;
+          context.push(p);
+        });
+        var stride = Math.max(1, Math.floor(rows.length / Math.max(limit, 1)));
+        rows.forEach(function (p, i) {
+          if (context.length >= limit) return;
+          if (packetIds[p.id] || used[p.id] || i % stride !== 0) return;
+          used[p.id] = true;
+          context.push(p);
+        });
+        return context;
+      }
+
       function refreshRealMap() {
         if (!realMap.ready) return;
         var L = realMap.L;
@@ -3672,9 +3882,7 @@
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var selected = selectedPole();
-        var context = rows.filter(function (p, i) {
-          return !packetIds[p.id] && i % 24 === 0;
-        }).slice(0, 30);
+        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 260 : 80);
         var shown = context.concat(packets);
         if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
         realMap.layer.clearLayers();
@@ -3702,12 +3910,12 @@
           if (p.id === state.selectedId) selectedMarker = marker;
         });
 
-        var focus = packets.slice();
+        var focus = state.county === "All counties" && state.screen === "map" ? shown.slice() : packets.slice();
         if (selected && !focus.some(function (p) { return p.id === selected.id; })) focus.push(selected);
         if (focus.length) {
           realMap.map.fitBounds(L.latLngBounds(focus.map(function (p) { return [p.lat, p.lon]; })), {
             padding: [34, 34],
-            maxZoom: 10
+            maxZoom: state.county === "All counties" && state.screen === "map" ? 7 : 10
           });
         }
         realMap.map.invalidateSize();
@@ -3762,8 +3970,8 @@
 
       function point3d(p) {
         return {
-          x: (((p.lon + 84.35) / 2.12) - 0.5) * 24,
-          z: -((((p.lat - 41.65) / 1.96) - 0.5) * 14),
+          x: (normalizedLon(p.lon) - 0.5) * 24,
+          z: -((normalizedLat(p.lat) - 0.5) * 14),
           y: 0.08 + p.risk * 2.9 + p.criticality * 0.45
         };
       }
@@ -3982,10 +4190,13 @@
         var grid = "";
         for (var x = 70; x < 720; x += 80) grid += '<path d="M' + x + ' 40 L' + (x - 36) + ' 392" stroke="' + gridColor + '" stroke-width="1"></path>';
         for (var y = 64; y < 390; y += 54) grid += '<path d="M42 ' + y + ' L718 ' + (y + 22) + '" stroke="' + gridColor + '" stroke-width="1"></path>';
-        var countyLabels = COUNTIES.map(function (c, i) {
-          var x = projectX(lonForCounty(i, 0.45));
-          var y = projectY(latForCounty(i, 0.45));
-          return '<text x="' + x + '" y="' + y + '" font-size="9" fill="' + labelColor + '" font-weight="800">' + esc(c.toUpperCase()) + '</text>';
+        var labelNames = { Wayne: true, Oakland: true, Kent: true, Ingham: true, "Grand Traverse": true, Marquette: true, Chippewa: true, Houghton: true, Saginaw: true, Kalamazoo: true, Berrien: true, Alpena: true };
+        var countyLabels = COUNTY_AREAS.filter(function (c, i) {
+          return labelNames[c.name] || i % 7 === 0;
+        }).map(function (c) {
+          var x = projectX(c.lon);
+          var y = projectY(c.lat);
+          return '<text x="' + x + '" y="' + y + '" font-size="9" fill="' + labelColor + '" font-weight="800">' + esc(c.name.toUpperCase()) + '</text>';
         }).join("");
         var stations = STATIONS.map(function (s) {
           return '<g><circle cx="' + projectX(s[1]) + '" cy="' + projectY(s[2]) + '" r="4" fill="' + stationColor + '"></circle>' +
@@ -4005,7 +4216,7 @@
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var selected = state.selectedId;
-        var context = rows.filter(function (p, i) { return !packetIds[p.id] && i % 12 === 0; }).slice(0, 140);
+        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 360 : 120);
         var shown = context.concat(packets);
         var circles = shown.map(function (p) {
           var x = projectX(p.lon), y = projectY(p.lat);
@@ -4198,14 +4409,6 @@
         URL.revokeObjectURL(url);
       }
 
-      function renderFooter() {
-        els.footer.innerHTML = '<strong>Provenance.</strong> Deterministic synthetic DTE-style pole fleet generated locally: ' +
-          POLES.length.toLocaleString("en-US") + ' poles across ' + COUNTIES.length +
-          ' Southeast Michigan counties. Public-data proxies are named per receipt; resident and crew reports are overlays only, never model training inputs. ' +
-          'Map context uses OpenStreetMap tiles; Google Maps opens the pole estimate, while Street View opens a nearby public-road anchor for road-level context. ' +
-          '<strong>Validation-ready label.</strong> KPI values are synthetic-demo estimates until checked against real DTE inspection, outage, and work-order outcomes. Generated 2026-05-16.';
-      }
-
       function render() {
         setDisplayAttrs();
         var rows = filtered();
@@ -4217,6 +4420,7 @@
         renderOverview(rows, packets);
         renderOpsBanner(rows, packets);
         renderKpis(rows, packets);
+        updateMapViewportSize();
         renderControls();
         renderDisplayControls();
         renderViewControls();
@@ -4225,7 +4429,6 @@
         drawMap(rows, packets);
         renderTable(rows, packets);
         renderReceipt(selectedPole());
-        renderFooter();
       }
 
       document.addEventListener("click", function (e) {
@@ -4302,6 +4505,11 @@
       els.exportCsv.addEventListener("click", exportCsv);
       els.exportJson.addEventListener("click", exportJson);
       els.printReceipt.addEventListener("click", function () { window.print(); });
+      window.addEventListener("resize", function () {
+        updateMapViewportSize();
+        if (realMap.ready) realMap.map.invalidateSize();
+        resizeDepthScene();
+      });
 
       render();
     })();
