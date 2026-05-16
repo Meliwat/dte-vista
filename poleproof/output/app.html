@@ -135,6 +135,36 @@
       justify-content: flex-end;
     }
 
+    .primary-nav,
+    .bottom-tabs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: #dce8dd;
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .nav-btn.active {
+      color: #06100c;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .command-trigger {
+      min-height: 36px;
+      padding: 0 12px;
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -195,6 +225,51 @@
       min-height: calc(100vh - 165px);
     }
 
+    .screen-summary {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .screen-summary h2 {
+      margin: 3px 0 0;
+      font-size: 24px;
+      line-height: 1.08;
+    }
+
+    .screen-summary p,
+    .screen-kicker {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .screen-kicker {
+      display: block;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .screen-action {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .screen-action .action-btn {
+      min-width: 190px;
+    }
+
+    .screen-panel[hidden],
+    [hidden] {
+      display: none !important;
+    }
+
     .panel {
       background: var(--panel);
       border-right: 1px solid var(--line);
@@ -205,6 +280,76 @@
     .controls {
       padding: 18px 16px 22px;
       overflow: auto;
+    }
+
+    .overview {
+      min-width: 0;
+      padding: var(--panel-pad);
+      background: var(--paper);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(300px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .overview-lead,
+    .overview-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .overview-lead {
+      padding: 22px;
+    }
+
+    .overview-lead h2,
+    .overview-card h3 {
+      margin: 0;
+      color: var(--ink);
+      letter-spacing: 0.02em;
+    }
+
+    .overview-lead p,
+    .overview-card p {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .overview-card {
+      padding: 16px;
+    }
+
+    .overview-list {
+      display: grid;
+      gap: 9px;
+      margin: 14px 0 0;
+    }
+
+    .overview-row {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .overview-row:last-child {
+      border-bottom: 0;
+    }
+
+    .overview-row span {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .section {
@@ -802,6 +947,89 @@
       line-height: 1.4;
     }
 
+    .command-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: start center;
+      padding: 12vh 18px 18px;
+      background: rgba(5, 10, 7, 0.58);
+    }
+
+    .command-dialog {
+      width: min(620px, 100%);
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .command-head {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .command-head h2 {
+      margin: 0 0 8px;
+      color: var(--ink);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .command-input {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel);
+      outline: none;
+    }
+
+    .command-list {
+      max-height: 360px;
+      overflow: auto;
+      padding: 8px;
+    }
+
+    .command-item {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) auto;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      padding: 9px 10px;
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: transparent;
+      text-align: left;
+    }
+
+    .command-item:hover,
+    .command-item.active,
+    .command-item:focus-visible {
+      color: #06100c;
+      background: var(--accent);
+      outline: none;
+    }
+
+    .command-item strong {
+      font-size: 13px;
+    }
+
+    .command-item span {
+      color: inherit;
+      opacity: 0.72;
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
     .footer {
       padding: 13px 24px;
       border-top: 1px solid var(--line);
@@ -911,6 +1139,10 @@
       background: var(--panel);
     }
 
+    :root:not([data-screen="overview"]) .kpis {
+      display: none;
+    }
+
     .kpi {
       position: relative;
       min-height: 104px;
@@ -959,9 +1191,37 @@
     }
 
     .shell {
-      grid-template-columns: 284px minmax(500px, 1fr) 392px;
-      min-height: calc(100vh - 206px);
+      grid-template-columns: minmax(0, 1fr);
+      min-height: calc(100vh - 278px);
       background: var(--paper);
+    }
+
+    :root[data-screen="work"] .shell {
+      grid-template-columns: 284px minmax(500px, 1fr);
+    }
+
+    :root[data-screen="audit"] .shell {
+      grid-template-columns: minmax(0, 960px);
+      justify-content: center;
+    }
+
+    :root[data-screen="map"] .worklist,
+    :root[data-screen="map"] .receipt-header,
+    :root[data-screen="work"] .field-visuals,
+    :root[data-screen="work"] .view-tabs,
+    :root[data-screen="audit"] [data-panel-section="work"],
+    :root[data-screen="work"] [data-panel-section="audit"] {
+      display: none;
+    }
+
+    :root[data-screen="work"] .field-title {
+      grid-template-columns: 1fr;
+    }
+
+    :root[data-screen="receipt"] .receipt {
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
     }
 
     .panel {
@@ -1632,24 +1892,54 @@
       background: var(--panel);
     }
 
+    .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    :root[data-screen="work"] .shell {
+      grid-template-columns: minmax(250px, 286px) minmax(0, 1fr);
+    }
+
+    :root[data-screen="audit"] .shell {
+      grid-template-columns: minmax(0, 960px);
+      justify-content: center;
+    }
+
+    .controls {
+      grid-row: auto;
+    }
+
+    .receipt {
+      grid-column: auto;
+    }
+
+    :root[data-screen="receipt"] .receipt {
+      border-top: 0;
+    }
+
     @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: minmax(240px, 280px) minmax(420px, 1fr);
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      .receipt {
-        grid-column: 2;
-        border-top: 1px solid var(--line);
+      :root[data-screen="work"] .shell {
+        grid-template-columns: minmax(240px, 280px) minmax(420px, 1fr);
       }
     }
 
     @media (max-width: 820px) {
-      .topbar, .ops-banner, .field-title, .worklist-head {
+      .topbar, .ops-banner, .field-title, .worklist-head, .screen-summary {
         grid-template-columns: 1fr;
       }
 
-      .top-actions, .legend {
+      .top-actions, .legend, .screen-action {
         justify-content: flex-start;
+      }
+
+      .primary-nav {
+        width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
       }
 
       .ops-banner {
@@ -1681,18 +1971,20 @@
         min-height: auto;
       }
 
-      .field {
-        order: 1;
+      :root[data-screen="work"] .shell {
+        grid-template-columns: 1fr;
       }
 
-      .controls {
-        order: 2;
+      .overview,
+      .field,
+      .controls,
+      .receipt {
+        order: initial;
         grid-row: auto;
       }
 
-      .receipt {
-        order: 3;
-        grid-column: auto;
+      .overview-grid {
+        grid-template-columns: 1fr;
       }
 
       .panel {
@@ -1730,6 +2022,10 @@
         padding: 14px 16px;
       }
 
+      body {
+        padding-bottom: 64px;
+      }
+
       .brand {
         align-items: flex-start;
       }
@@ -1759,6 +2055,41 @@
       #riskDepthCanvas {
         min-height: 320px;
       }
+
+      :root[data-screen="map"] .field-title {
+        display: none;
+      }
+
+      :root[data-screen="map"] .field-wrap {
+        padding-top: 12px;
+      }
+
+      .bottom-tabs {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 40;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0;
+        border-top: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .bottom-tabs .nav-btn {
+        min-height: 58px;
+        padding: 0 4px;
+        border: 0;
+        border-radius: 0;
+        font-size: 10px;
+      }
+    }
+
+    @media (min-width: 561px) {
+      .bottom-tabs {
+        display: none;
+      }
     }
 
     @media print {
@@ -1776,6 +2107,8 @@
       <p>Utility pole risk receipts, defensible prioritization, and crew-ready work packets</p>
     </div>
     <div class="top-actions">
+      <nav class="primary-nav" id="primaryNav" aria-label="Primary screens"></nav>
+      <button class="pill command-trigger" id="commandOpen" type="button">Cmd K</button>
       <span class="pill">No proprietary inputs</span>
       <span class="pill">Synthetic demo · validation-ready</span>
     </div>
@@ -1785,9 +2118,20 @@
 
   <section class="kpis" id="kpis" aria-label="PoleProof performance indicators"></section>
 
+  <section class="screen-summary" aria-live="polite">
+    <div>
+      <span class="screen-kicker" id="screenKicker">Overview</span>
+      <h2 id="screenTitle">Resident-ready pole risk overview</h2>
+      <p id="screenBlurb">A plain-language entry point before crews, judges, or residents open deeper evidence.</p>
+    </div>
+    <div class="screen-action" id="screenAction"></div>
+  </section>
+
   <div class="shell">
-    <aside class="panel controls" aria-label="Controls">
-      <div class="section">
+    <section class="panel overview screen-panel" id="overviewScreen" data-screen-panel="overview" aria-label="Overview"></section>
+
+    <aside class="panel controls screen-panel" data-screen-panel="work audit" aria-label="Controls">
+      <div class="section" data-panel-section="work">
         <h2>Prioritization</h2>
         <label for="objective">Objective</label>
         <select id="objective">
@@ -1811,7 +2155,7 @@
         <div class="range-row"><span id="budgetLabel">110 packets</span><span>current cycle</span></div>
       </div>
 
-      <details class="section disclosure">
+      <details class="section disclosure" data-panel-section="audit">
         <summary><span>Guardrails</span><small>3 rules</small></summary>
         <label class="toggle">
           <input id="confidenceGuard" type="checkbox" checked>
@@ -1827,7 +2171,7 @@
         </label>
       </details>
 
-      <details class="section disclosure">
+      <details class="section disclosure" data-panel-section="audit">
         <summary><span>Display</span><small>theme, density, 3D</small></summary>
         <label>Theme</label>
         <div class="segmented" id="themeControls"></div>
@@ -1841,16 +2185,16 @@
         </label>
       </details>
 
-      <div class="section">
+      <div class="section" data-panel-section="work audit">
         <h2>Exports</h2>
         <div class="btn-row">
-          <button class="action-btn" id="exportCsv">Export work packets CSV</button>
+          <button class="action-btn secondary" id="exportCsv">Export work packets CSV</button>
           <button class="action-btn secondary" id="exportJson">Export selected receipt JSON</button>
-          <button class="action-btn warn" id="printReceipt">Print receipt</button>
+          <button class="action-btn secondary" id="printReceipt">Print receipt</button>
         </div>
       </div>
 
-      <details class="section disclosure">
+      <details class="section disclosure" data-panel-section="audit">
         <summary><span>Source manifest</span><small>5 inputs</small></summary>
         <ul class="source-list">
           <li><i></i><span>NOAA-style wind, ice, precipitation, and freeze-thaw normals</span></li>
@@ -1862,7 +2206,7 @@
       </details>
     </aside>
 
-    <main class="panel field" aria-label="Evidence field and worklist">
+    <main class="panel field screen-panel" data-screen-panel="map work" aria-label="Evidence field and worklist">
       <div class="field-wrap">
         <div class="field-title">
           <div>
@@ -1924,7 +2268,7 @@
       </div>
     </main>
 
-    <aside class="panel receipt" aria-label="Selected risk receipt">
+    <aside class="panel receipt screen-panel" data-screen-panel="receipt" aria-label="Selected risk receipt">
       <div class="receipt-header">
         <h2>Selected receipt</h2>
         <span class="receipt-status" id="receiptStatus"></span>
@@ -1934,6 +2278,18 @@
   </div>
 
   <footer class="footer" id="footer"></footer>
+
+  <nav class="bottom-tabs" id="bottomTabs" aria-label="Mobile screens"></nav>
+
+  <div class="command-overlay" id="commandOverlay" hidden>
+    <div class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="commandTitle">
+      <div class="command-head">
+        <h2 id="commandTitle">Command palette</h2>
+        <input class="command-input" id="commandSearch" type="text" autocomplete="off" placeholder="Search screens and actions">
+      </div>
+      <div class="command-list" id="commandList" role="listbox" aria-label="Available commands"></div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -1960,7 +2316,16 @@
         { id: "elevated", label: "Elevated", min: 0.26, color: "#d9c537" }
       ];
 
+      var SCREENS = [
+        { id: "overview", label: "Overview", title: "Resident-ready pole risk overview", blurb: "Plain-language status before crews, judges, or residents open deeper evidence.", primary: "Review selected receipt", command: "receipt" },
+        { id: "map", label: "Map", title: "Real Michigan map context", blurb: "See where work packets sit and open nearby Google Maps or Street View context.", primary: "Open nearby Street View", command: "street" },
+        { id: "work", label: "Packets", title: "Prioritized work packets", blurb: "Tune the inspection budget and review the ranked crew list without extra audit controls in the way.", primary: "Export work packets CSV", command: "csv" },
+        { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Review the evidence, expected risk drop, and crew packet for the active pole.", primary: "Export selected receipt JSON", command: "json" },
+        { id: "audit", label: "Audit", title: "Guardrails and source manifest", blurb: "Inspect validation rules, display preferences, and named source inputs.", primary: "Print receipt", command: "print" }
+      ];
+
       var state = {
+        screen: new URLSearchParams(window.location.search).get("screen") || "overview",
         objective: "outage",
         tier: "all",
         county: "All counties",
@@ -1977,7 +2342,22 @@
         selectedId: null
       };
 
+      if (!SCREENS.some(function (screen) { return screen.id === state.screen; })) {
+        state.screen = "overview";
+      }
+
       var els = {
+        primaryNav: document.getElementById("primaryNav"),
+        bottomTabs: document.getElementById("bottomTabs"),
+        commandOpen: document.getElementById("commandOpen"),
+        commandOverlay: document.getElementById("commandOverlay"),
+        commandSearch: document.getElementById("commandSearch"),
+        commandList: document.getElementById("commandList"),
+        screenKicker: document.getElementById("screenKicker"),
+        screenTitle: document.getElementById("screenTitle"),
+        screenBlurb: document.getElementById("screenBlurb"),
+        screenAction: document.getElementById("screenAction"),
+        overviewScreen: document.getElementById("overviewScreen"),
         opsBanner: document.getElementById("opsBanner"),
         kpis: document.getElementById("kpis"),
         objective: document.getElementById("objective"),
@@ -2212,6 +2592,82 @@
         return POLES.find(function (p) { return p.id === state.selectedId; });
       }
 
+      function screenMeta(id) {
+        return SCREENS.find(function (screen) { return screen.id === id; }) || SCREENS[0];
+      }
+
+      function setScreen(id) {
+        if (!SCREENS.some(function (screen) { return screen.id === id; })) return;
+        state.screen = id;
+        var url = new URL(window.location.href);
+        url.searchParams.set("screen", id);
+        if (id === "map") url.searchParams.set("view", state.evidenceView);
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+        render();
+      }
+
+      function navMarkup(idPrefix) {
+        return SCREENS.map(function (screen) {
+          var active = state.screen === screen.id;
+          return '<button class="nav-btn ' + (active ? "active" : "") + '" type="button" data-screen-target="' + screen.id +
+            '" aria-current="' + (active ? "page" : "false") + '" id="' + idPrefix + '-' + screen.id + '">' + esc(screen.label) + '</button>';
+        }).join("");
+      }
+
+      function renderNavigation() {
+        els.primaryNav.innerHTML = navMarkup("nav");
+        els.bottomTabs.innerHTML = navMarkup("tab");
+        Array.prototype.forEach.call(document.querySelectorAll("[data-screen-target]"), function (button) {
+          button.addEventListener("click", function () {
+            setScreen(button.getAttribute("data-screen-target"));
+          });
+        });
+      }
+
+      function updateVisiblePanels() {
+        Array.prototype.forEach.call(document.querySelectorAll("[data-screen-panel]"), function (panel) {
+          var screens = panel.getAttribute("data-screen-panel").split(/\s+/);
+          panel.hidden = screens.indexOf(state.screen) === -1;
+        });
+      }
+
+      function renderScreenSummary() {
+        var screen = screenMeta(state.screen);
+        els.screenKicker.textContent = screen.label;
+        els.screenTitle.textContent = screen.title;
+        els.screenBlurb.textContent = screen.blurb;
+        els.screenAction.innerHTML = '<button class="action-btn" type="button" data-command="' + screen.command + '">' + esc(screen.primary) + '</button>';
+      }
+
+      function renderOverview(rows, packets) {
+        var selected = selectedPole();
+        var critical = rows.filter(function (p) { return p.tier === "critical"; }).length;
+        var selectedLabel = selected ? priorityLabel(selected) + " / " + selected.county + " County" : "No selected pole";
+        var nextAction = selected ? selected.action + " within " + (selected.risk >= 0.72 ? "0-14 days" : selected.risk >= 0.48 ? "15-45 days" : "the next cycle") : "Adjust filters";
+        var avoided = packets.reduce(function (sum, p) { return sum + p.outageMinutes * p.reduction; }, 0);
+        els.overviewScreen.innerHTML =
+          '<div class="overview-grid">' +
+            '<div class="overview-lead">' +
+              '<h2>Southeast Michigan pole work at a glance.</h2>' +
+              '<p>The current cycle is organized around location, urgency, and a receipt that explains why a pole was selected.</p>' +
+              '<div class="overview-list">' +
+                '<div class="overview-row"><span>Selected</span><strong>' + esc(selectedLabel) + '</strong></div>' +
+                '<div class="overview-row"><span>Next step</span><strong>' + esc(nextAction) + '</strong></div>' +
+                '<div class="overview-row"><span>Location</span><strong>' + (selected ? esc(coordinateText(selected)) : "No location") + '</strong></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="overview-card">' +
+              '<h3>This inspection cycle</h3>' +
+              '<div class="overview-list">' +
+                '<div class="overview-row"><span>Packets</span><strong>' + packets.length.toLocaleString("en-US") + ' active work packets</strong></div>' +
+                '<div class="overview-row"><span>Receipts</span><strong>' + rows.length.toLocaleString("en-US") + ' visible receipts</strong></div>' +
+                '<div class="overview-row"><span>Critical</span><strong>' + critical.toLocaleString("en-US") + ' critical receipts in scope</strong></div>' +
+                '<div class="overview-row"><span>Benefit</span><strong>' + Math.round(avoided).toLocaleString("en-US") + ' avoided outage minutes estimated</strong></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      }
+
       function colorForTier(tier) {
         return {
           critical: cssVar("--red", "#ef6358"),
@@ -2283,6 +2739,7 @@
       }
 
       function setDisplayAttrs() {
+        document.documentElement.dataset.screen = state.screen;
         document.documentElement.dataset.theme = state.theme;
         document.documentElement.dataset.density = state.density;
         document.documentElement.dataset.accent = state.accent;
@@ -2391,6 +2848,73 @@
           '<a class="map-link" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open in Google Maps</a>' +
           '<a class="map-link" href="' + esc(streetViewUrl(p)) + '" target="_blank" rel="noopener">Open nearby Street View</a>' +
         '</div>';
+      }
+
+      var commandState = {
+        open: false,
+        activeIndex: 0
+      };
+
+      function openExternal(url) {
+        window.open(url, "_blank", "noopener");
+      }
+
+      function commandItems() {
+        var selected = selectedPole();
+        return [
+          { id: "overview", label: "Go to Overview", group: "Screen", run: function () { setScreen("overview"); } },
+          { id: "map", label: "Go to Map", group: "Screen", run: function () { setScreen("map"); } },
+          { id: "work", label: "Go to Work Packets", group: "Screen", run: function () { setScreen("work"); } },
+          { id: "receipt", label: "Go to Receipt", group: "Screen", run: function () { setScreen("receipt"); } },
+          { id: "audit", label: "Go to Audit", group: "Screen", run: function () { setScreen("audit"); } },
+          { id: "street", label: "Open nearby Street View", group: "Location", run: function () { if (selected) openExternal(streetViewUrl(selected)); } },
+          { id: "google", label: "Open in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
+          { id: "csv", label: "Export work packets CSV", group: "Export", run: exportCsv },
+          { id: "json", label: "Export selected receipt JSON", group: "Export", run: exportJson },
+          { id: "print", label: "Print receipt", group: "Export", run: function () { window.print(); } },
+          { id: "depth", label: "Show 3D relief", group: "View", run: function () { state.evidenceView = "depth"; setScreen("map"); } },
+          { id: "streetmap", label: "Show real map", group: "View", run: function () { state.evidenceView = "map"; setScreen("map"); } },
+          { id: "county", label: "Change county filter", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.county.focus(); }, 0); } },
+          { id: "budget", label: "Change inspection budget", group: "Filter", run: function () { setScreen("work"); setTimeout(function () { els.budget.focus(); }, 0); } },
+          { id: "guardrails", label: "Review guardrails", group: "Audit", run: function () { setScreen("audit"); } }
+        ];
+      }
+
+      function filteredCommands() {
+        var query = (els.commandSearch.value || "").trim().toLowerCase();
+        return commandItems().filter(function (item) {
+          return !query || item.label.toLowerCase().indexOf(query) !== -1 || item.group.toLowerCase().indexOf(query) !== -1;
+        });
+      }
+
+      function renderCommandList() {
+        var items = filteredCommands();
+        commandState.activeIndex = clamp(commandState.activeIndex, 0, Math.max(items.length - 1, 0));
+        els.commandList.innerHTML = items.length ? items.map(function (item, i) {
+          return '<button class="command-item ' + (i === commandState.activeIndex ? "active" : "") + '" type="button" role="option" data-command="' + esc(item.id) + '" aria-selected="' + (i === commandState.activeIndex ? "true" : "false") + '">' +
+            '<strong>' + esc(item.label) + '</strong><span>' + esc(item.group) + '</span></button>';
+        }).join("") : '<div class="empty">No commands match that search.</div>';
+      }
+
+      function openCommandPalette() {
+        commandState.open = true;
+        commandState.activeIndex = 0;
+        els.commandOverlay.hidden = false;
+        els.commandSearch.value = "";
+        renderCommandList();
+        setTimeout(function () { els.commandSearch.focus(); }, 0);
+      }
+
+      function closeCommandPalette() {
+        commandState.open = false;
+        els.commandOverlay.hidden = true;
+      }
+
+      function performCommand(id) {
+        var item = commandItems().find(function (cmd) { return cmd.id === id; });
+        if (!item) return;
+        closeCommandPalette();
+        item.run();
       }
 
       function markerIcon(p, inPacket) {
@@ -2687,6 +3211,7 @@
       function updateDepthScene(rows, packets) {
         depth.rows = rows;
         depth.packets = packets;
+        if (state.screen !== "map" || state.evidenceView !== "depth") return;
         renderDepthHud(rows, packets);
         initDepthScene();
         if (!depth.ready) return;
@@ -3014,6 +3539,10 @@
         var rows = filtered();
         var packets = rows.slice(0, state.budget);
         selectFirstIfNeeded(rows);
+        renderNavigation();
+        updateVisiblePanels();
+        renderScreenSummary();
+        renderOverview(rows, packets);
         renderOpsBanner(rows, packets);
         renderKpis(rows, packets);
         renderControls();
@@ -3026,6 +3555,45 @@
         renderReceipt(selectedPole());
         renderFooter();
       }
+
+      document.addEventListener("click", function (e) {
+        var command = e.target.closest("[data-command]");
+        if (!command) return;
+        performCommand(command.getAttribute("data-command"));
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          openCommandPalette();
+        } else if (e.key === "Escape" && commandState.open) {
+          closeCommandPalette();
+        }
+      });
+
+      els.commandOpen.addEventListener("click", openCommandPalette);
+      els.commandOverlay.addEventListener("click", function (e) {
+        if (e.target === els.commandOverlay) closeCommandPalette();
+      });
+      els.commandSearch.addEventListener("input", function () {
+        commandState.activeIndex = 0;
+        renderCommandList();
+      });
+      els.commandSearch.addEventListener("keydown", function (e) {
+        var items = filteredCommands();
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          commandState.activeIndex = clamp(commandState.activeIndex + 1, 0, Math.max(items.length - 1, 0));
+          renderCommandList();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          commandState.activeIndex = clamp(commandState.activeIndex - 1, 0, Math.max(items.length - 1, 0));
+          renderCommandList();
+        } else if (e.key === "Enter" && items[commandState.activeIndex]) {
+          e.preventDefault();
+          performCommand(items[commandState.activeIndex].id);
+        }
+      });
 
       els.objective.addEventListener("change", function () {
         state.objective = els.objective.value;
