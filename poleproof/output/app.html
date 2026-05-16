@@ -1412,8 +1412,8 @@
       min-height: 360px;
       overflow: hidden;
       background:
-        radial-gradient(circle at 62% 18%, color-mix(in srgb, var(--blue) 20%, transparent), transparent 34%),
-        linear-gradient(180deg, color-mix(in srgb, var(--panel-3) 72%, transparent), transparent 70%);
+        radial-gradient(circle at 68% 18%, rgba(69, 137, 255, 0.22), transparent 34%),
+        linear-gradient(180deg, #07100d 0%, #12231b 58%, #07100d 100%);
       isolation: isolate;
     }
 
@@ -1457,8 +1457,8 @@
       padding: 5px 7px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      color: var(--ink);
-      background: color-mix(in srgb, var(--panel) 82%, transparent);
+      color: #f4f4f4;
+      background: rgba(5, 7, 11, 0.72);
       font-size: 10px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1477,8 +1477,8 @@
       padding: 4px 7px;
       border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
       border-radius: var(--radius);
-      color: var(--muted);
-      background: color-mix(in srgb, var(--panel) 76%, transparent);
+      color: #d7e2d9;
+      background: rgba(5, 7, 11, 0.68);
       font-size: 10px;
       font-weight: 850;
       text-transform: uppercase;
@@ -2703,7 +2703,17 @@
       border-radius: 0;
     }
 
+    :root[data-screen="map"] .depth-scene {
+      background:
+        radial-gradient(circle at 68% 18%, rgba(69, 137, 255, 0.22), transparent 34%),
+        linear-gradient(180deg, #07100d 0%, #12231b 58%, #07100d 100%);
+    }
+
     @media (max-width: 560px) {
+      :root[data-screen="map"] body {
+        padding-bottom: 0;
+      }
+
       :root[data-screen="map"] .shell {
         min-height: 420px;
       }
@@ -3657,6 +3667,10 @@
 
       var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       var OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+      var SATELLITE_TILE_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      var SATELLITE_ZOOM = 7;
+      var DEPTH_TERRAIN_WIDTH = 28;
+      var DEPTH_TERRAIN_DEPTH = 20;
       var realMap = {
         loading: false,
         ready: false,
@@ -3935,6 +3949,9 @@
         loading: false,
         ready: false,
         error: false,
+        imageryLoading: false,
+        imageryReady: false,
+        imageryError: false,
         rows: [],
         packets: [],
         yaw: -0.32,
@@ -3947,6 +3964,8 @@
         renderer: null,
         group: null,
         terrain: null,
+        terrainMaterial: null,
+        mapTexture: null,
         columns: null,
         tips: null,
         selectedMast: null,
@@ -3960,7 +3979,8 @@
         var critical = packets.filter(function (p) { return p.tier === "critical"; }).length;
         var peak = packets.reduce(function (best, p) { return !best || p.risk > best.risk ? p : best; }, null);
         els.depthHud.innerHTML =
-          '<strong>3D risk relief</strong><div>' +
+          '<strong>3D satellite risk relief</strong><div>' +
+          '<span>Earth imagery base</span>' +
           '<span>' + packets.length + ' active columns</span>' +
           '<span>' + critical + ' critical peaks</span>' +
           '<span>peak ' + esc(peak ? peak.county : "none") + ' ' + (peak ? pct1(peak.risk) : "0.0%") + '</span>' +
@@ -3970,10 +3990,99 @@
 
       function point3d(p) {
         return {
-          x: (normalizedLon(p.lon) - 0.5) * 24,
-          z: -((normalizedLat(p.lat) - 0.5) * 14),
+          x: (normalizedLon(p.lon) - 0.5) * (DEPTH_TERRAIN_WIDTH - 2),
+          z: -((normalizedLat(p.lat) - 0.5) * (DEPTH_TERRAIN_DEPTH - 2)),
           y: 0.08 + p.risk * 2.9 + p.criticality * 0.45
         };
+      }
+
+      function lonToTileFloat(lon, zoom) {
+        return (lon + 180) / 360 * Math.pow(2, zoom);
+      }
+
+      function latToTileFloat(lat, zoom) {
+        var rad = lat * Math.PI / 180;
+        return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, zoom);
+      }
+
+      function satelliteTileUrl(z, x, y) {
+        return SATELLITE_TILE_URL.replace("{z}", z).replace("{x}", x).replace("{y}", y);
+      }
+
+      function loadSatelliteImage(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.decoding = "async";
+          img.onload = function () { resolve(img); };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      function buildSatelliteTexture(THREE) {
+        if (depth.imageryReady || depth.imageryLoading || depth.mapTexture) return;
+        depth.imageryLoading = true;
+        var z = SATELLITE_ZOOM;
+        var tileSize = 256;
+        var minTileX = Math.floor(lonToTileFloat(MAP_BOUNDS.minLon, z));
+        var maxTileX = Math.floor(lonToTileFloat(MAP_BOUNDS.maxLon, z));
+        var minTileY = Math.floor(latToTileFloat(MAP_BOUNDS.maxLat, z));
+        var maxTileY = Math.floor(latToTileFloat(MAP_BOUNDS.minLat, z));
+        var tileCanvas = document.createElement("canvas");
+        var tileW = (maxTileX - minTileX + 1) * tileSize;
+        var tileH = (maxTileY - minTileY + 1) * tileSize;
+        tileCanvas.width = tileW;
+        tileCanvas.height = tileH;
+        var tileCtx = tileCanvas.getContext("2d");
+        tileCtx.fillStyle = "#13251b";
+        tileCtx.fillRect(0, 0, tileW, tileH);
+        var jobs = [];
+        for (var x = minTileX; x <= maxTileX; x++) {
+          for (var y = minTileY; y <= maxTileY; y++) {
+            jobs.push((function (tx, ty) {
+              return loadSatelliteImage(satelliteTileUrl(z, tx, ty)).then(function (img) {
+                tileCtx.drawImage(img, (tx - minTileX) * tileSize, (ty - minTileY) * tileSize, tileSize, tileSize);
+              }).catch(function () {});
+            })(x, y));
+          }
+        }
+        Promise.all(jobs).then(function () {
+          var cropX = (lonToTileFloat(MAP_BOUNDS.minLon, z) - minTileX) * tileSize;
+          var cropY = (latToTileFloat(MAP_BOUNDS.maxLat, z) - minTileY) * tileSize;
+          var cropW = (lonToTileFloat(MAP_BOUNDS.maxLon, z) - lonToTileFloat(MAP_BOUNDS.minLon, z)) * tileSize;
+          var cropH = (latToTileFloat(MAP_BOUNDS.minLat, z) - latToTileFloat(MAP_BOUNDS.maxLat, z)) * tileSize;
+          var canvas = document.createElement("canvas");
+          canvas.width = 1024;
+          canvas.height = 768;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(tileCanvas, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+          var shade = ctx.createLinearGradient(0, 0, 0, canvas.height);
+          shade.addColorStop(0, "rgba(4, 8, 8, 0.08)");
+          shade.addColorStop(0.56, "rgba(4, 8, 8, 0.00)");
+          shade.addColorStop(1, "rgba(4, 8, 8, 0.20)");
+          ctx.fillStyle = shade;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          var texture = new THREE.CanvasTexture(canvas);
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.anisotropy = depth.renderer ? Math.min(8, depth.renderer.capabilities.getMaxAnisotropy()) : 4;
+          texture.needsUpdate = true;
+          depth.mapTexture = texture;
+          depth.imageryReady = true;
+          depth.imageryLoading = false;
+          applyDepthImagery();
+          updateDepthScene(depth.rows, depth.packets);
+        }).catch(function () {
+          depth.imageryLoading = false;
+          depth.imageryError = true;
+        });
+      }
+
+      function applyDepthImagery() {
+        if (!depth.terrainMaterial || !depth.mapTexture) return;
+        depth.terrainMaterial.map = depth.mapTexture;
+        depth.terrainMaterial.color.set(0xffffff);
+        depth.terrainMaterial.needsUpdate = true;
       }
 
       function initDepthScene() {
@@ -3991,8 +4100,8 @@
           depth.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
           depth.renderer.setClearColor(0x000000, 0);
           depth.scene = new THREE.Scene();
-          depth.camera = new THREE.OrthographicCamera(-14, 14, 12, -12, 0.1, 100);
-          depth.camera.position.set(9, 10, 14);
+          depth.camera = new THREE.OrthographicCamera(-15.5, 15.5, 12, -12, 0.1, 100);
+          depth.camera.position.set(10, 12, 16);
           depth.camera.lookAt(0, 1.4, 0);
           depth.group = new THREE.Group();
           depth.scene.add(depth.group);
@@ -4004,27 +4113,25 @@
           rim.position.set(10, 8, -8);
           depth.scene.add(ambient, key, rim);
 
-          var plane = new THREE.PlaneGeometry(28, 16, 42, 24);
+          var plane = new THREE.PlaneGeometry(DEPTH_TERRAIN_WIDTH, DEPTH_TERRAIN_DEPTH, 64, 46);
           plane.rotateX(-Math.PI / 2);
           var pos = plane.attributes.position;
           for (var i = 0; i < pos.count; i++) {
             var x = pos.getX(i);
             var z = pos.getZ(i);
-            pos.setY(i, Math.sin(x * 0.5) * 0.13 + Math.cos(z * 0.75) * 0.10 - 0.20);
+            pos.setY(i, Math.sin(x * 0.33) * 0.10 + Math.cos(z * 0.41) * 0.08 - 0.18);
           }
           plane.computeVertexNormals();
-          depth.terrain = new THREE.Mesh(plane, new THREE.MeshStandardMaterial({
-            color: hexForColor(cssVar("--panel-3", "#16251d")),
-            roughness: 0.82,
-            metalness: 0.18,
+          depth.terrainMaterial = new THREE.MeshStandardMaterial({
+            color: 0x284237,
+            roughness: 0.88,
+            metalness: 0.02,
             transparent: true,
-            opacity: 0.82
-          }));
+            opacity: 0.98
+          });
+          depth.terrain = new THREE.Mesh(plane, depth.terrainMaterial);
           depth.group.add(depth.terrain);
-
-          var grid = new THREE.GridHelper(28, 28, hexForColor(cssVar("--line-strong", "#3a5448")), hexForColor(cssVar("--line", "#26372f")));
-          grid.position.y = 0.02;
-          depth.group.add(grid);
+          buildSatelliteTexture(THREE);
 
           var mastGeo = new THREE.CylinderGeometry(0.055, 0.055, 1, 14);
           depth.selectedMast = new THREE.Mesh(mastGeo, new THREE.MeshBasicMaterial({ color: hexForColor(cssVar("--ink", "#edf5ee")) }));
@@ -4072,7 +4179,7 @@
         var height = Math.max(1, Math.floor(box.height));
         depth.renderer.setSize(width, height, false);
         var aspect = width / height;
-        var halfWidth = 14;
+        var halfWidth = 15.5;
         depth.camera.left = -halfWidth;
         depth.camera.right = halfWidth;
         depth.camera.top = halfWidth / aspect;
@@ -4100,7 +4207,10 @@
         disposeDepthObject(depth.tips);
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
-        var shown = packets.slice(0, 180);
+        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 260 : 80);
+        var shown = context.concat(packets).slice(0, 420);
+        var selected = selectedPole();
+        if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
         var linePositions = new Float32Array(shown.length * 6);
         var lineColors = new Float32Array(shown.length * 6);
         var tipPositions = new Float32Array(shown.length * 3);
@@ -4150,7 +4260,6 @@
         }));
         depth.group.add(depth.tips);
 
-        var selected = selectedPole();
         if (selected) {
           var sp = point3d(selected);
           depth.selectedMast.visible = true;
