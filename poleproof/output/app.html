@@ -2723,6 +2723,167 @@
       }
     }
 
+    .poleview-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 5600;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      color: #f4f4f4;
+      background: rgba(0, 0, 0, 0.76);
+      backdrop-filter: blur(5px);
+    }
+
+    .poleview-dialog {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      width: min(1180px, 100%);
+      height: min(760px, calc(100dvh - 36px));
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: #05070b;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+    }
+
+    .poleview-stage {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 22%, rgba(120, 169, 255, 0.18), transparent 36%),
+        linear-gradient(180deg, #17202a 0%, #61747a 44%, #182018 45%, #070908 100%);
+    }
+
+    #poleViewCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .poleview-caption {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      max-width: min(520px, calc(100% - 32px));
+      padding: 9px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      color: #f4f4f4;
+      background: rgba(5, 7, 11, 0.72);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .poleview-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      background: #111318;
+    }
+
+    .poleview-close {
+      align-self: flex-end;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 0;
+      color: #f4f4f4;
+      background: #262626;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .poleview-kicker {
+      margin: 0;
+      color: #78a9ff;
+      font-size: 11px;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .poleview-panel h2 {
+      margin: -8px 0 0;
+      font-size: 24px;
+      line-height: 1.05;
+    }
+
+    .poleview-panel p {
+      margin: 0;
+      color: #c6c6c6;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .poleview-stats {
+      display: grid;
+      gap: 8px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .poleview-stat {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 10px;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .poleview-stat span {
+      color: #8d8d8d;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    .poleview-stat strong {
+      color: #f4f4f4;
+    }
+
+    .poleview-actions {
+      display: grid;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .poleview-actions .action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      text-decoration: none;
+    }
+
+    @media (max-width: 760px) {
+      .poleview-overlay {
+        padding: 0;
+      }
+
+      .poleview-dialog {
+        grid-template-columns: 1fr;
+        width: 100%;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+      }
+
+      .poleview-stage {
+        min-height: 0;
+      }
+
+      .poleview-panel {
+        max-height: 42dvh;
+        overflow: auto;
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+      }
+    }
+
     @media print {
       .controls, .field, .top-actions { display: none; }
       .topbar, .receipt { color: #000; background: #fff; }
@@ -2920,6 +3081,28 @@
       </div>
       <div class="command-list" id="commandList" role="listbox" aria-label="Available commands"></div>
     </div>
+  </div>
+
+  <div class="poleview-overlay" id="poleViewOverlay" hidden>
+    <section class="poleview-dialog" role="dialog" aria-modal="true" aria-labelledby="poleViewTitle">
+      <div class="poleview-stage">
+        <canvas id="poleViewCanvas"></canvas>
+        <div class="poleview-caption" id="poleViewCaption"></div>
+      </div>
+      <aside class="poleview-panel">
+        <button class="poleview-close" id="poleViewClose" type="button">Close</button>
+        <p class="poleview-kicker">Michigan PoleView</p>
+        <h2 id="poleViewTitle">Road-level pole view</h2>
+        <p id="poleViewSummary">Select a 3D risk column to dive into a pole-level view.</p>
+        <div class="poleview-stats" id="poleViewStats"></div>
+        <div class="poleview-actions">
+          <button class="action-btn secondary" id="poleViewPrev" type="button">Previous pole</button>
+          <button class="action-btn secondary" id="poleViewNext" type="button">Next pole</button>
+          <a class="action-btn secondary" id="poleViewMaps" target="_blank" rel="noopener">Open pole estimate</a>
+          <a class="action-btn" id="poleViewStreet" target="_blank" rel="noopener">Open road Street View</a>
+        </div>
+      </aside>
+    </section>
   </div>
 
   <script>
@@ -3152,6 +3335,17 @@
         commandOverlay: document.getElementById("commandOverlay"),
         commandSearch: document.getElementById("commandSearch"),
         commandList: document.getElementById("commandList"),
+        poleViewOverlay: document.getElementById("poleViewOverlay"),
+        poleViewCanvas: document.getElementById("poleViewCanvas"),
+        poleViewCaption: document.getElementById("poleViewCaption"),
+        poleViewClose: document.getElementById("poleViewClose"),
+        poleViewTitle: document.getElementById("poleViewTitle"),
+        poleViewSummary: document.getElementById("poleViewSummary"),
+        poleViewStats: document.getElementById("poleViewStats"),
+        poleViewPrev: document.getElementById("poleViewPrev"),
+        poleViewNext: document.getElementById("poleViewNext"),
+        poleViewMaps: document.getElementById("poleViewMaps"),
+        poleViewStreet: document.getElementById("poleViewStreet"),
         screenKicker: document.getElementById("screenKicker"),
         screenTitle: document.getElementById("screenTitle"),
         screenBlurb: document.getElementById("screenBlurb"),
@@ -3723,6 +3917,179 @@
         '</div>';
       }
 
+      function distanceSq(a, b) {
+        return Math.pow(a.lat - b.lat, 2) + Math.pow((a.lon - b.lon) * 0.72, 2);
+      }
+
+      function routePolesFor(p) {
+        return POLES.filter(function (q) { return q.county === p.county; }).sort(function (a, b) {
+          return (a.lat + a.lon * 0.18) - (b.lat + b.lon * 0.18);
+        });
+      }
+
+      function neighborPole(p, direction) {
+        var route = routePolesFor(p);
+        var index = route.findIndex(function (q) { return q.id === p.id; });
+        if (index < 0 || !route.length) return p;
+        return route[(index + direction + route.length) % route.length];
+      }
+
+      function drawPoleSilhouette(ctx, x, baseY, scale, lean, color, accent) {
+        ctx.save();
+        ctx.translate(x, baseY);
+        ctx.rotate(lean);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(3, 8 * scale);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -190 * scale);
+        ctx.stroke();
+        ctx.lineWidth = Math.max(2, 4 * scale);
+        ctx.beginPath();
+        ctx.moveTo(-44 * scale, -154 * scale);
+        ctx.lineTo(44 * scale, -154 * scale);
+        ctx.stroke();
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.arc(-36 * scale, -154 * scale, 7 * scale, 0, Math.PI * 2);
+        ctx.arc(36 * scale, -154 * scale, 7 * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawPoleView(p) {
+        if (!p || !els.poleViewCanvas) return;
+        var canvas = els.poleViewCanvas;
+        var box = canvas.getBoundingClientRect();
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var w = Math.max(1, Math.floor(box.width * dpr));
+        var h = Math.max(1, Math.floor(box.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+        var ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        w = box.width;
+        h = box.height;
+        var sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+        sky.addColorStop(0, "#9fc8df");
+        sky.addColorStop(0.58, "#d6e7ee");
+        sky.addColorStop(1, "#f4f6f2");
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, w, h);
+
+        var horizon = h * 0.43;
+        var area = countyAreaFor(p.county);
+        ctx.fillStyle = area.zone === "urban" ? "#6f766f" : area.zone === "up" || area.zone === "north" ? "#284d2d" : "#426b39";
+        ctx.fillRect(0, horizon, w, h * 0.18);
+        for (var i = 0; i < 28; i++) {
+          var tx = (i * 97 + p.id.charCodeAt(2) * 13) % w;
+          var th = 28 + ((i * 31) % 56);
+          ctx.fillStyle = area.zone === "urban" ? "rgba(70, 76, 72, 0.65)" : "rgba(26, 70, 35, 0.72)";
+          ctx.fillRect(tx, horizon - th, 18 + (i % 5) * 8, th);
+        }
+
+        var roadTop = horizon + h * 0.08;
+        ctx.fillStyle = "#343a3e";
+        ctx.beginPath();
+        ctx.moveTo(w * 0.36, roadTop);
+        ctx.lineTo(w * 0.64, roadTop);
+        ctx.lineTo(w * 0.88, h);
+        ctx.lineTo(w * 0.12, h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = "#aeb6af";
+        ctx.beginPath();
+        ctx.moveTo(w * 0.30, roadTop);
+        ctx.lineTo(w * 0.36, roadTop);
+        ctx.lineTo(w * 0.12, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(w * 0.64, roadTop);
+        ctx.lineTo(w * 0.70, roadTop);
+        ctx.lineTo(w, h);
+        ctx.lineTo(w * 0.88, h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.62)";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([24, 22]);
+        ctx.beginPath();
+        ctx.moveTo(w * 0.5, roadTop + 12);
+        ctx.lineTo(w * 0.5, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        var leanDriver = p.drivers.find(function (d) { return d.key === "lean"; });
+        var lean = leanDriver ? clamp(leanDriver.weight / 0.26, 0, 1) * 0.12 : 0.02;
+        drawPoleSilhouette(ctx, w * 0.78, h * 0.87, Math.min(1.2, Math.max(0.84, h / 680)), -lean, "#3a2b20", colorForTier(p.tier));
+        drawPoleSilhouette(ctx, w * 0.30, h * 0.68, 0.48, 0.02, "#453528", "rgba(241,194,27,0.82)");
+        drawPoleSilhouette(ctx, w * 0.62, h * 0.55, 0.34, -0.01, "#453528", "rgba(241,194,27,0.82)");
+
+        ctx.strokeStyle = "rgba(38, 32, 27, 0.86)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.78 - 44, h * 0.87 - 156);
+        ctx.bezierCurveTo(w * 0.58, h * 0.35, w * 0.43, h * 0.36, w * 0.30 - 20, h * 0.68 - 72);
+        ctx.moveTo(w * 0.78 + 44, h * 0.87 - 156);
+        ctx.bezierCurveTo(w * 0.68, h * 0.35, w * 0.62, h * 0.37, w * 0.62 + 16, h * 0.55 - 54);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(5,7,11,0.72)";
+        ctx.fillRect(20, 20, Math.min(360, w - 40), 92);
+        ctx.fillStyle = "#f4f4f4";
+        ctx.font = "700 18px system-ui, sans-serif";
+        ctx.fillText(p.id + " / " + priorityLabel(p), 36, 50);
+        ctx.font = "600 13px system-ui, sans-serif";
+        ctx.fillText(p.county + " County / " + p.action, 36, 75);
+        ctx.fillText("Risk " + pct1(p.risk) + " / confidence " + pct1(p.confidence), 36, 98);
+        ctx.restore();
+
+        els.poleViewCaption.textContent = "Digital pole view built from the selected pole receipt, road anchor, and statewide map context. Use Google Street View when imagery exists; use PoleView when it does not.";
+      }
+
+      function renderPoleViewPanel(p) {
+        var ctx = streetContext(p);
+        els.poleViewTitle.textContent = p.id + " in " + p.county + " County";
+        els.poleViewSummary.textContent = priorityLabel(p) + " / " + p.action + ". Road anchor: " + ctx.label + ".";
+        els.poleViewStats.innerHTML =
+          '<div class="poleview-stat"><span>Risk</span><strong>' + pct1(p.risk) + ' / ' + esc(p.tier) + '</strong></div>' +
+          '<div class="poleview-stat"><span>Receipt</span><strong>' + esc(p.receipt) + '</strong></div>' +
+          '<div class="poleview-stat"><span>Pole est.</span><strong>' + esc(coordinateText(p)) + '</strong></div>' +
+          '<div class="poleview-stat"><span>Road view</span><strong>' + esc(streetContextLabel(p)) + '</strong></div>' +
+          '<div class="poleview-stat"><span>Top driver</span><strong>' + esc(p.drivers[0].label) + '</strong></div>';
+        els.poleViewMaps.href = googleMapsUrl(p);
+        els.poleViewStreet.href = streetViewUrl(p);
+      }
+
+      function openPoleView(p) {
+        if (!p) return;
+        state.selectedId = p.id;
+        els.poleViewOverlay.hidden = false;
+        renderPoleViewPanel(p);
+        requestAnimationFrame(function () { drawPoleView(p); });
+      }
+
+      function closePoleView() {
+        els.poleViewOverlay.hidden = true;
+      }
+
+      function movePoleView(direction) {
+        var current = selectedPole();
+        if (!current) return;
+        var next = neighborPole(current, direction);
+        state.selectedId = next.id;
+        renderPoleViewPanel(next);
+        drawPoleView(next);
+        renderReceipt(next);
+        updateDepthScene(depth.rows, depth.packets);
+      }
+
       var commandState = {
         open: false,
         activeIndex: 0
@@ -3740,6 +4107,7 @@
           { id: "work", label: "Go to Work Packets", group: "Screen", run: function () { setScreen("work"); } },
           { id: "receipt", label: "Go to Receipt", group: "Screen", run: function () { setScreen("receipt"); } },
           { id: "audit", label: "Go to Audit", group: "Screen", run: function () { setScreen("audit"); } },
+          { id: "poleview", label: "Open Michigan PoleView", group: "Location", run: function () { if (selected) openPoleView(selected); } },
           { id: "street", label: "Open road Street View", group: "Location", run: function () { if (selected) openExternal(streetViewUrl(selected)); } },
           { id: "google", label: "Open pole estimate in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
           { id: "csv", label: "Export work packets CSV", group: "Export", run: exportCsv },
@@ -3954,11 +4322,15 @@
         imageryError: false,
         rows: [],
         packets: [],
+        visiblePoles: [],
         yaw: -0.32,
         pitch: -0.10,
         targetYaw: -0.32,
         dragging: false,
+        moved: false,
         lastX: 0,
+        downX: 0,
+        downY: 0,
         scene: null,
         camera: null,
         renderer: null,
@@ -3970,6 +4342,7 @@
         tips: null,
         selectedMast: null,
         selectedRing: null,
+        raycaster: null,
         resizeObserver: null,
         THREE: null
       };
@@ -3981,6 +4354,7 @@
         els.depthHud.innerHTML =
           '<strong>3D satellite risk relief</strong><div>' +
           '<span>Earth imagery base</span>' +
+          '<span>click a column to dive</span>' +
           '<span>' + packets.length + ' active columns</span>' +
           '<span>' + critical + ' critical peaks</span>' +
           '<span>peak ' + esc(peak ? peak.county : "none") + ' ' + (peak ? pct1(peak.risk) : "0.0%") + '</span>' +
@@ -4085,6 +4459,40 @@
         depth.terrainMaterial.needsUpdate = true;
       }
 
+      function pickDepthPole(e) {
+        if (!depth.ready || !depth.tips || !depth.visiblePoles.length) return;
+        var THREE = depth.THREE;
+        if (!depth.raycaster) depth.raycaster = new THREE.Raycaster();
+        depth.raycaster.params.Points.threshold = 0.38;
+        var rect = els.depthCanvas.getBoundingClientRect();
+        var mouse = new THREE.Vector2(
+          ((e.clientX - rect.left) / rect.width) * 2 - 1,
+          -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+        );
+        depth.raycaster.setFromCamera(mouse, depth.camera);
+        var hits = depth.raycaster.intersectObject(depth.tips);
+        var p = hits.length && hits[0].index != null ? depth.visiblePoles[hits[0].index] : null;
+        if (!p) {
+          depth.group.updateMatrixWorld();
+          var best = null;
+          var bestDist = Infinity;
+          depth.visiblePoles.forEach(function (candidate) {
+            var pt = point3d(candidate);
+            var v = new THREE.Vector3(pt.x, pt.y, pt.z);
+            v.applyMatrix4(depth.group.matrixWorld).project(depth.camera);
+            var sx = (v.x * 0.5 + 0.5) * rect.width + rect.left;
+            var sy = (-v.y * 0.5 + 0.5) * rect.height + rect.top;
+            var d = Math.pow(sx - e.clientX, 2) + Math.pow(sy - e.clientY, 2);
+            if (d < bestDist) { bestDist = d; best = candidate; }
+          });
+          if (best && bestDist < 90 * 90) p = best;
+        }
+        if (!p) return;
+        state.selectedId = p.id;
+        render();
+        openPoleView(p);
+      }
+
       function initDepthScene() {
         if (depth.ready || depth.loading || depth.error || !els.depthCanvas) return;
         depth.loading = true;
@@ -4147,15 +4555,23 @@
 
           els.depthCanvas.addEventListener("pointerdown", function (e) {
             depth.dragging = true;
+            depth.moved = false;
+            depth.downX = e.clientX;
+            depth.downY = e.clientY;
             depth.lastX = e.clientX;
             els.depthCanvas.setPointerCapture(e.pointerId);
           });
           els.depthCanvas.addEventListener("pointermove", function (e) {
             if (!depth.dragging) return;
+            if (Math.abs(e.clientX - depth.downX) + Math.abs(e.clientY - depth.downY) > 5) depth.moved = true;
             depth.targetYaw += (e.clientX - depth.lastX) * 0.006;
             depth.lastX = e.clientX;
           });
-          els.depthCanvas.addEventListener("pointerup", function () { depth.dragging = false; });
+          els.depthCanvas.addEventListener("pointerup", function (e) {
+            var wasClick = !depth.moved;
+            depth.dragging = false;
+            if (wasClick) pickDepthPole(e);
+          });
           els.depthCanvas.addEventListener("pointercancel", function () { depth.dragging = false; });
 
           depth.resizeObserver = new ResizeObserver(resizeDepthScene);
@@ -4211,6 +4627,7 @@
         var shown = context.concat(packets).slice(0, 420);
         var selected = selectedPole();
         if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
+        depth.visiblePoles = shown;
         var linePositions = new Float32Array(shown.length * 6);
         var lineColors = new Float32Array(shown.length * 6);
         var tipPositions = new Float32Array(shown.length * 3);
@@ -4552,6 +4969,8 @@
           openCommandPalette();
         } else if (e.key === "Escape" && commandState.open) {
           closeCommandPalette();
+        } else if (e.key === "Escape" && !els.poleViewOverlay.hidden) {
+          closePoleView();
         }
       });
 
@@ -4578,6 +4997,12 @@
           performCommand(items[commandState.activeIndex].id);
         }
       });
+      els.poleViewClose.addEventListener("click", closePoleView);
+      els.poleViewOverlay.addEventListener("click", function (e) {
+        if (e.target === els.poleViewOverlay) closePoleView();
+      });
+      els.poleViewPrev.addEventListener("click", function () { movePoleView(-1); });
+      els.poleViewNext.addEventListener("click", function () { movePoleView(1); });
 
       els.objective.addEventListener("change", function () {
         state.objective = els.objective.value;
@@ -4618,6 +5043,7 @@
         updateMapViewportSize();
         if (realMap.ready) realMap.map.invalidateSize();
         resizeDepthScene();
+        if (!els.poleViewOverlay.hidden) drawPoleView(selectedPole());
       });
 
       render();
