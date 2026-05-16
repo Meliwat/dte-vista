@@ -713,6 +713,12 @@
       color: #b9c5b5;
     }
 
+    :root[data-theme="light"] .topbar .pill {
+      color: #eef7ee;
+      border-color: rgba(255, 255, 255, 0.32);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
     .brand {
       display: flex;
       gap: 12px;
@@ -1302,13 +1308,213 @@
       border-color: var(--line);
     }
 
+    /* Human-readable mode: reduce simultaneous choices and expose advanced detail on demand. */
+    .topbar {
+      min-height: 64px;
+      padding: 14px 20px;
+    }
+
+    .brand p {
+      max-width: 560px;
+      color: var(--subtle);
+      font-size: 13px;
+      text-transform: none;
+    }
+
+    .kpi {
+      min-height: 86px;
+      padding: 14px 16px;
+    }
+
+    .kpi strong {
+      font-size: 26px;
+    }
+
+    .kpi em {
+      display: none;
+    }
+
+    .ops-banner {
+      padding: 8px 20px;
+    }
+
+    .shell {
+      grid-template-columns: minmax(250px, 286px) minmax(0, 1fr);
+      min-height: auto;
+    }
+
+    .controls {
+      grid-row: 1 / span 2;
+      padding: 18px 16px;
+    }
+
+    .field {
+      border-right: 0;
+    }
+
+    .receipt {
+      grid-column: 2;
+      border-top: 1px solid var(--line);
+      background: var(--field);
+      overflow: visible;
+    }
+
+    .section {
+      padding: 14px 0;
+    }
+
+    details.section {
+      padding: 0;
+    }
+
+    .disclosure {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .disclosure summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 48px;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      list-style: none;
+      text-transform: uppercase;
+    }
+
+    .disclosure summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .disclosure summary::after {
+      content: "+";
+      color: var(--accent);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .disclosure[open] summary::after {
+      content: "-";
+    }
+
+    .disclosure summary small {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .disclosure > :not(summary) {
+      margin-bottom: 14px;
+    }
+
+    .field-title {
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .field-title p {
+      max-width: 620px;
+      font-size: 13px;
+    }
+
+    .field-tools {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+    }
+
+    .view-tabs {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .view-tabs .chip {
+      min-height: 32px;
+      min-width: 112px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .view-tabs .chip.active {
+      color: #06100c;
+      background: var(--accent);
+    }
+
+    .field-visuals {
+      display: block;
+    }
+
+    .field-visuals .map-shell,
+    .field-visuals .depth-scene {
+      margin-top: 12px;
+    }
+
+    :root[data-evidence-view="map"] .depth-scene,
+    :root[data-evidence-view="depth"] .map-shell {
+      display: none;
+    }
+
+    .map-shell,
+    .depth-scene,
+    #riskDepthCanvas {
+      min-height: 430px;
+    }
+
+    #map {
+      height: min(48vh, 500px);
+      min-height: 430px;
+    }
+
+    .table-wrap {
+      max-height: 310px;
+    }
+
+    .worklist {
+      margin-top: 16px;
+    }
+
+    .receipt-header {
+      position: static;
+      margin: calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1) 14px;
+    }
+
+    .receipt-status {
+      max-width: 360px;
+    }
+
+    .receipt-shell {
+      grid-template-columns: minmax(300px, 1fr) minmax(300px, 0.9fr);
+      align-items: start;
+    }
+
+    .receipt-card:first-child {
+      grid-row: span 2;
+    }
+
+    .receipt-card {
+      background: var(--panel);
+    }
+
     @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: 284px minmax(420px, 1fr);
+        grid-template-columns: minmax(240px, 280px) minmax(420px, 1fr);
       }
 
       .receipt {
-        grid-column: 1 / -1;
+        grid-column: 2;
         border-top: 1px solid var(--line);
       }
     }
@@ -1334,6 +1540,14 @@
         grid-template-columns: 1fr 1fr;
       }
 
+      .view-tabs {
+        width: 100%;
+      }
+
+      .view-tabs .chip {
+        min-width: 0;
+      }
+
       .kpi {
         border-bottom: 1px solid var(--line);
       }
@@ -1341,6 +1555,14 @@
       .shell {
         grid-template-columns: 1fr;
         min-height: auto;
+      }
+
+      .controls {
+        grid-row: auto;
+      }
+
+      .receipt {
+        grid-column: auto;
       }
 
       .panel {
@@ -1353,7 +1575,19 @@
       }
 
       .field-visuals {
+        display: block;
+      }
+
+      .field-tools {
+        justify-items: start;
+      }
+
+      .receipt-shell {
         grid-template-columns: 1fr;
+      }
+
+      .receipt-card:first-child {
+        grid-row: auto;
       }
 
       th, td {
@@ -1408,8 +1642,6 @@
       <p>Utility pole risk receipts, defensible prioritization, and crew-ready work packets</p>
     </div>
     <div class="top-actions">
-      <span class="pill">Live build</span>
-      <span class="pill">Public-data demonstrator</span>
       <span class="pill">No proprietary inputs</span>
       <span class="pill">Synthetic demo · validation-ready</span>
     </div>
@@ -1445,8 +1677,8 @@
         <div class="range-row"><span id="budgetLabel">110 packets</span><span>current cycle</span></div>
       </div>
 
-      <div class="section">
-        <h2>Guardrails</h2>
+      <details class="section disclosure">
+        <summary><span>Guardrails</span><small>3 rules</small></summary>
         <label class="toggle">
           <input id="confidenceGuard" type="checkbox" checked>
           <span>Hold back low-confidence poles unless corroborated or high criticality.</span>
@@ -1459,10 +1691,10 @@
           <input id="explainability" type="checkbox" checked>
           <span>Require every packet to include top drivers, sources, and a receipt hash.</span>
         </label>
-      </div>
+      </details>
 
-      <div class="section">
-        <h2>Display</h2>
+      <details class="section disclosure">
+        <summary><span>Display</span><small>theme, density, 3D</small></summary>
         <label>Theme</label>
         <div class="segmented" id="themeControls"></div>
         <label>Density</label>
@@ -1473,7 +1705,7 @@
           <input id="showAlerts" type="checkbox" checked>
           <span>Show the active incident and validation banner above the instrument panel.</span>
         </label>
-      </div>
+      </details>
 
       <div class="section">
         <h2>Exports</h2>
@@ -1484,8 +1716,8 @@
         </div>
       </div>
 
-      <div class="section">
-        <h2>Source manifest</h2>
+      <details class="section disclosure">
+        <summary><span>Source manifest</span><small>5 inputs</small></summary>
         <ul class="source-list">
           <li><i></i><span>NOAA-style wind, ice, precipitation, and freeze-thaw normals</span></li>
           <li><i></i><span>Image-derived canopy, pole lean, crossarm, and right-of-way structure proxies</span></li>
@@ -1493,7 +1725,7 @@
           <li><i></i><span>Road access, salt exposure, critical facilities, and outage consequence proxies</span></li>
           <li><i></i><span>Moderated community and crew reports kept outside the model score</span></li>
         </ul>
-      </div>
+      </details>
     </aside>
 
     <main class="panel field" aria-label="Evidence field and worklist">
@@ -1504,12 +1736,15 @@
             <p id="fieldSubtitle">Synthetic Southeast Michigan pole fleet with receipt-level evidence and crew packets.</p>
             <div class="field-meta" id="fieldMeta"></div>
           </div>
-          <div class="legend">
-            <span><i class="dot" style="background: var(--red)"></i>Critical</span>
-            <span><i class="dot" style="background: var(--amber)"></i>High</span>
-            <span><i class="dot" style="background: #d9c537"></i>Elevated</span>
-            <span><i class="dot" style="background: var(--green)"></i>Routine</span>
-            <span><i class="dot" style="background: var(--blue)"></i>Packet</span>
+          <div class="field-tools">
+            <div class="view-tabs" id="viewControls" aria-label="Evidence view"></div>
+            <div class="legend">
+              <span><i class="dot" style="background: var(--red)"></i>Critical</span>
+              <span><i class="dot" style="background: var(--amber)"></i>High</span>
+              <span><i class="dot" style="background: #d9c537"></i>Elevated</span>
+              <span><i class="dot" style="background: var(--green)"></i>Routine</span>
+              <span><i class="dot" style="background: var(--blue)"></i>Packet</span>
+            </div>
           </div>
         </div>
 
@@ -1599,10 +1834,11 @@
         confidenceGuard: true,
         communityOverlay: true,
         explainability: true,
-        theme: "dark",
-        density: "compact",
+        theme: "light",
+        density: "comfortable",
         accent: "green",
-        showAlerts: true,
+        evidenceView: new URLSearchParams(window.location.search).get("view") === "depth" ? "depth" : "map",
+        showAlerts: false,
         selectedId: null
       };
 
@@ -1622,6 +1858,7 @@
         themeControls: document.getElementById("themeControls"),
         densityControls: document.getElementById("densityControls"),
         accentControls: document.getElementById("accentControls"),
+        viewControls: document.getElementById("viewControls"),
         showAlerts: document.getElementById("showAlerts"),
         depthCanvas: document.getElementById("riskDepthCanvas"),
         depthHud: document.getElementById("depthHud"),
@@ -1912,6 +2149,7 @@
         document.documentElement.dataset.theme = state.theme;
         document.documentElement.dataset.density = state.density;
         document.documentElement.dataset.accent = state.accent;
+        document.documentElement.dataset.evidenceView = state.evidenceView;
       }
 
       function buttonGroup(el, items, current, attr, onPick) {
@@ -1942,6 +2180,13 @@
           { id: "amber", label: "Work" }
         ], state.accent, "accent", function (id) { state.accent = id; });
         els.showAlerts.checked = state.showAlerts;
+      }
+
+      function renderViewControls() {
+        buttonGroup(els.viewControls, [
+          { id: "map", label: "Map" },
+          { id: "depth", label: "3D relief" }
+        ], state.evidenceView, "view", function (id) { state.evidenceView = id; });
       }
 
       function renderOpsBanner(rows, packets) {
@@ -2014,7 +2259,7 @@
         return {
           x: (((p.lon + 84.35) / 2.12) - 0.5) * 24,
           z: -((((p.lat - 41.65) / 1.96) - 0.5) * 14),
-          y: 0.08 + p.risk * 4.1 + p.criticality * 0.85
+          y: 0.08 + p.risk * 2.9 + p.criticality * 0.45
         };
       }
 
@@ -2135,19 +2380,20 @@
         renderDepthHud(rows, packets);
         initDepthScene();
         if (!depth.ready) return;
+        resizeDepthScene();
         var THREE = depth.THREE;
         disposeDepthObject(depth.columns);
         disposeDepthObject(depth.tips);
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
-        var shown = rows.slice(0, 850);
+        var shown = packets.slice(0, 180);
         var linePositions = new Float32Array(shown.length * 6);
         var lineColors = new Float32Array(shown.length * 6);
         var tipPositions = new Float32Array(shown.length * 3);
         var tipColors = new Float32Array(shown.length * 3);
         shown.forEach(function (p, i) {
           var pt = point3d(p);
-          var c = new THREE.Color(hexForColor(packetIds[p.id] ? cssVar("--blue", "#57a9dc") : colorForTier(p.tier)));
+          var c = new THREE.Color(hexForColor(colorForTier(p.tier)));
           var lp = i * 6;
           linePositions[lp] = pt.x;
           linePositions[lp + 1] = 0.05;
@@ -2252,16 +2498,17 @@
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var selected = state.selectedId;
-        var shown = rows.slice(0, 900);
+        var context = rows.filter(function (p, i) { return !packetIds[p.id] && i % 12 === 0; }).slice(0, 140);
+        var shown = context.concat(packets);
         var circles = shown.map(function (p) {
           var x = projectX(p.lon), y = projectY(p.lat);
           var inPacket = packetIds[p.id];
-          var r = inPacket ? 5.4 : 3.2;
+          var r = inPacket ? 5.8 : 2.5;
           var stroke = p.id === selected ? ink : (inPacket ? blue : paper);
           var sw = p.id === selected ? 3 : (inPacket ? 2 : 0.7);
           return '<circle class="node" tabindex="0" data-id="' + p.id + '" cx="' + x.toFixed(2) +
             '" cy="' + y.toFixed(2) + '" r="' + r + '" fill="' + colorForTier(p.tier) +
-            '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + (inPacket ? "0.96" : "0.68") + '"></circle>';
+            '" stroke="' + stroke + '" stroke-width="' + sw + '" opacity="' + (inPacket ? "0.96" : "0.28") + '"></circle>';
         }).join("");
         var reports = state.communityOverlay ? shown.filter(function (p) { return p.report !== "none"; }).map(function (p) {
           var x = projectX(p.lon), y = projectY(p.lat);
@@ -2458,6 +2705,7 @@
         renderKpis(rows, packets);
         renderControls();
         renderDisplayControls();
+        renderViewControls();
         renderFieldMeta(rows, packets);
         updateDepthScene(rows, packets);
         drawMap(rows, packets);
