@@ -786,6 +786,26 @@
       background: var(--panel-2);
     }
 
+    .challenge-fit {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .challenge-fit span {
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: var(--panel-2);
+      font-size: 10px;
+      font-weight: 850;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
     .worklist {
       margin-top: 16px;
       border: 1px solid var(--line);
@@ -1976,6 +1996,10 @@
         grid-row: auto;
       }
 
+      .challenge-fit {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       th, td {
         padding: 8px;
       }
@@ -1999,6 +2023,10 @@
       }
 
       .multi-chip {
+        grid-template-columns: 1fr;
+      }
+
+      .challenge-fit {
         grid-template-columns: 1fr;
       }
 
@@ -2591,14 +2619,14 @@
   <header class="topbar">
     <div class="brand">
       <h1>POLEPROOF</h1>
-      <p>Utility pole risk receipts, defensible prioritization, and crew-ready work packets</p>
+      <p>Every pole decision ships with a defensible, audit-ready receipt: prioritization a regulator and a crew can both trust.</p>
     </div>
     <div class="top-actions">
       <nav class="primary-nav" id="primaryNav" aria-label="Primary screens"></nav>
       <button class="pill command-trigger" id="commandOpen" type="button" aria-label="Open command palette">
         <span>Command</span><kbd>Cmd</kbd><kbd>K</kbd>
       </button>
-      <span class="pill">No proprietary inputs</span>
+      <span class="pill">Public + synthetic data</span>
       <span class="pill">Audit-ready receipts</span>
     </div>
   </header>
@@ -2686,10 +2714,10 @@
       <details class="section disclosure" data-panel-section="audit">
         <summary><span>Source manifest</span><small>5 inputs</small></summary>
         <ul class="source-list">
-          <li><i></i><span>NOAA-style wind, ice, precipitation, and freeze-thaw normals</span></li>
-          <li><i></i><span>Image-derived canopy, pole lean, crossarm, and right-of-way structure proxies</span></li>
-          <li><i></i><span>FEMA-style flood exposure, drainage, slope, and soil moisture proxies</span></li>
-          <li><i></i><span>Road access, salt exposure, critical facilities, and outage consequence proxies</span></li>
+          <li><i></i><span>NOAA-style wind, ice, precipitation, storm path, and freeze-thaw normals</span></li>
+          <li><i></i><span>Landsat/Sentinel/NAIP-style canopy, pole lean, crossarm, and right-of-way proxies</span></li>
+          <li><i></i><span>FEMA-style flood exposure plus terrain, slope, drainage, and soil moisture proxies</span></li>
+          <li><i></i><span>Open basemaps, road access, salt exposure, critical facilities, and outage consequence proxies</span></li>
           <li><i></i><span>Moderated community and crew reports kept outside the model score</span></li>
         </ul>
       </details>
@@ -2971,8 +2999,8 @@
       ];
 
       var SCREENS = [
-        { id: "work", label: "Field", title: "Michigan field prioritization", blurb: "Map-based crew prioritization with filters, ranked work packets, and receipt-backed decisions.", primary: "Export work packets CSV", command: "csv" },
-        { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Evidence drivers, expected risk drop, crew packet, guardrails, and source manifest for the active pole.", primary: "Export selected receipt JSON", command: "json" }
+        { id: "work", label: "Field", title: "Michigan field prioritization", blurb: "Risk-based work planning: where crews should look first, what they should look for, and what action changes next week's schedule.", primary: "Export work packets CSV", command: "csv" },
+        { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Pole-level explanation that turns public/synthetic inputs into an action, confidence trail, guardrails, and source manifest.", primary: "Export selected receipt JSON", command: "json" }
       ];
 
       var state = {
@@ -3152,7 +3180,7 @@
 
       function actionFor(p) {
         var top = p.drivers[0].key;
-        if (p.risk >= 0.78 && (top === "lean" || top === "rot")) return "Replace / brace";
+        if (p.risk >= 0.78 && (top === "lean" || top === "rot")) return "Reinforce / replace";
         if (top === "vegetation") return "Tree trim";
         if (top === "flood" || top === "soil") return "Inspect base";
         if (top === "criticality") return "Protect circuit";
@@ -3632,10 +3660,11 @@
         var verified = rows.filter(function (p) { return p.report === "verified"; }).length;
         var top = packets[0];
         els.opsBanner.innerHTML =
-          '<div><strong>Ops cycle synthetic run</strong> ' +
+          '<div><strong>Predictive planning run</strong> ' +
           '<span><i></i>' + activeCritical + ' critical packets active</span>' +
           '<span>' + critical.toLocaleString("en-US") + ' critical receipts in view</span>' +
-          '<span>' + verified + ' verified overlays</span></div>' +
+          '<span>' + verified + ' verified overlays</span>' +
+          '<span>public/synthetic inputs</span></div>' +
           '<div><span>Lead action: ' + esc(top ? top.action : "none") + '</span><span>Last generated: 2026-05-16</span></div>';
       }
 
@@ -3652,7 +3681,8 @@
           '<span>' + rows.length.toLocaleString("en-US") + ' filtered receipts</span>' +
           '<span>' + Object.keys(counties).length + ' counties in scope</span>' +
           '<span>' + Object.keys(packetCounties).length + ' packet counties</span>' +
-          '<span>avg packet risk ' + pct1(avgRisk) + '</span>';
+          '<span>avg packet risk ' + pct1(avgRisk) + '</span>' +
+          '<span>Planner test: next-week schedule ready</span>';
       }
 
       var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
@@ -4130,7 +4160,7 @@
         }).join("");
         var nextWindow = p.risk >= 0.72 ? "0-14 days" : (p.risk >= 0.48 ? "15-45 days" : "next cycle");
         var materials = p.action === "Tree trim" ? "trim crew, ROW permit check, chipper slot" :
-          p.action === "Replace / brace" ? "class-matched pole, brace kit, transfer window" :
+          p.action === "Reinforce / replace" ? "class-matched pole, brace kit, transfer window" :
           p.action === "Inspect base" ? "probe, bore kit, base wrap, soil photo set" :
           "standard inspection kit, photo set, handheld GPS";
         var audit = [
@@ -4140,10 +4170,10 @@
           "Post-work follow-up compares before/after condition and expected risk reduction for accountability."
         ];
         var manifest = [
-          "NOAA-style wind, ice, precipitation, and freeze-thaw normals.",
-          "Image-derived canopy, pole lean, crossarm, and right-of-way structure proxies.",
-          "FEMA-style flood exposure, drainage, slope, and soil moisture proxies.",
-          "Road access, salt exposure, critical facilities, and outage consequence proxies.",
+          "NOAA-style wind, ice, precipitation, storm path, and freeze-thaw normals.",
+          "Landsat/Sentinel/NAIP-style canopy, pole lean, crossarm, and right-of-way proxies.",
+          "FEMA-style flood exposure plus terrain, slope, drainage, and soil moisture proxies.",
+          "Open basemaps, road access, salt exposure, critical facilities, and outage consequence proxies.",
           "Moderated resident and crew reports kept outside model training."
         ];
         els.receiptStatus.textContent = p.tier + " / " + p.action + " / " + p.hash;
@@ -4154,6 +4184,13 @@
               '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Pole estimate ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
               '<div class="resident-summary"><strong>Plain-language reason</strong>' + esc(plainReceiptSentence(p)) + '</div>' +
               '<div class="resident-summary impact"><strong>What this means for me</strong>' + esc(residentImpactLine(p)) + '</div>' +
+              '<div class="challenge-fit" aria-label="DTE challenge fit">' +
+                '<span>Pole-level unit</span>' +
+                '<span>Visible drivers</span>' +
+                '<span>Actionable work</span>' +
+                '<span>Explainable logic</span>' +
+                '<span>Scales statewide</span>' +
+              '</div>' +
               locationActions(p) +
               '<div class="street-context-note"><strong>Road context:</strong> ' + esc(streetContextText(p)) + '. This anchors the synthetic pole estimate to a public-road reference without promising unavailable imagery.</div>' +
               '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
@@ -4172,6 +4209,7 @@
             '<div class="receipt-top"><h3>Crew packet</h3><p>' + esc(p.action) + ' / target window ' + esc(nextWindow) + '</p></div>' +
             '<div class="receipt-body packet-grid">' +
               '<div class="packet-line"><span>Job code</span><strong>' + esc(jobCode(p)) + '</strong></div>' +
+              '<div class="packet-line"><span>Recommendation</span><strong>' + esc(p.action) + ' because ' + esc(plainDriverLabel(p.drivers[0])) + ' is the leading risk driver</strong></div>' +
               '<div class="packet-line"><span>Materials</span><strong>' + esc(materials) + '</strong></div>' +
               '<div class="packet-line"><span>Checklist</span><strong>verify pole ID, capture four photos, inspect base, log driver evidence, close receipt with disposition</strong></div>' +
               '<div class="packet-line"><span>Economics</span><strong>' + money(p.outageMinutes * p.reduction * 18) + ' avoided outage value before truck-roll cost</strong></div>' +
@@ -4195,7 +4233,7 @@
 
       function jobCode(p) {
         var prefix = p.action === "Tree trim" ? "VEG" :
-          p.action === "Replace / brace" ? "REP" :
+          p.action === "Reinforce / replace" ? "REP" :
           p.action === "Inspect base" ? "BAS" :
           p.action === "Protect circuit" ? "CRT" : "INS";
         return prefix + "-" + p.segment + "-" + p.id.slice(-3);
