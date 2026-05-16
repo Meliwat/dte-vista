@@ -1,0 +1,67 @@
+{
+  "ablation": {
+    "auc_gain_from_imagery": 0.1492,
+    "auc_with_imagery": 0.8697,
+    "auc_without_imagery": 0.7205,
+    "capture20_gain_from_imagery": 0.1356,
+    "capture20_with_imagery": 0.5424,
+    "capture20_without_imagery": 0.4068
+  },
+  "calibration": {
+    "brier": 0.1072,
+    "gap": 0.0478
+  },
+  "economics": {
+    "avoided_outage_cost_fleet_usd": 510000.0,
+    "benefit_cost_ratio": 8.28,
+    "budget_inspections_per_cycle_fleet": 280,
+    "extra_caught_per_100_truckrolls": 26.79,
+    "extra_failures_caught_fleet": 75.0,
+    "inspection_spend_fleet_usd": 61600.0,
+    "net_benefit_fleet_usd": 448400.0
+  },
+  "heldout": {
+    "brier": 0.1072,
+    "capture@20": 0.5424,
+    "n_test": 280,
+    "pos_rate": 0.2107,
+    "pr_auc": 0.648,
+    "roc_auc": 0.8697
+  },
+  "incumbent": {
+    "budget_frac": 0.2,
+    "capture_age_cycle": 0.2881,
+    "capture_fault_reactive": 0.2542,
+    "capture_random": 0.2,
+    "capture_vista": 0.5424,
+    "lift_vs_age_cycle_pts": 0.2542,
+    "lift_vs_age_cycle_x": 1.88,
+    "lift_vs_reactive_x": 2.13
+  },
+  "noaa": {
+    "counties": [
+      "Genesee",
+      "Ingham",
+      "Lapeer",
+      "Livingston",
+      "Macomb",
+      "Oakland",
+      "Saginaw",
+      "St. Clair",
+      "Washtenaw",
+      "Wayne"
+    ],
+    "mean_ann_prcp_in": 33.05,
+    "mean_ann_snow_in": 43.51,
+    "mean_ann_tavg_f": 48.72,
+    "n_stations": 12
+  },
+  "spatial_summary": [
+    0.8588,
+    0.0233
+  ],
+  "temporal_summary": [
+    0.5459,
+    0.0482
+  ]
+}

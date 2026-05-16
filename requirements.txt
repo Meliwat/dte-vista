@@ -1,0 +1,6 @@
+# VISTA - pinned, minimal, offline. Python 3.11.
+numpy==1.24.3
+scipy==1.11.1
+scikit-learn==1.3.0
+matplotlib==3.7.2
+pytest==7.4.0
