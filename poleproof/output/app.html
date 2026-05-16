@@ -806,6 +806,105 @@
       text-transform: uppercase;
     }
 
+    .data-proof {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      margin-top: 10px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--muted);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel-2);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .data-proof.real { border-left-color: var(--green); }
+    .data-proof.synthetic { border-left-color: var(--blue); }
+    .data-proof.validation { border-left-color: var(--amber); }
+
+    .proof-grid,
+    .formula-grid,
+    .validation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .proof-item,
+    .formula-item,
+    .validation-item {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .proof-item strong,
+    .formula-item strong,
+    .validation-item strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .proof-item span,
+    .formula-item span,
+    .validation-item span {
+      color: var(--muted);
+    }
+
+    .formula-line {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .scenario-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--amber);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .scenario-card strong,
+    .scenario-card span {
+      display: block;
+    }
+
+    .scenario-card strong {
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .scenario-card span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     .worklist {
       margin-top: 16px;
       border: 1px solid var(--line);
@@ -2000,6 +2099,13 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .proof-grid,
+      .formula-grid,
+      .validation-grid,
+      .scenario-card {
+        grid-template-columns: 1fr;
+      }
+
       th, td {
         padding: 8px;
       }
@@ -2736,6 +2842,7 @@
             </div>
             <span class="search-status" id="searchStatus">Search a Michigan county or city to focus the map and receipt.</span>
             <div class="field-meta" id="fieldMeta"></div>
+            <div class="scenario-card" id="stormScenario" aria-live="polite"></div>
           </div>
           <div class="field-tools">
             <div class="legend">
@@ -2905,6 +3012,57 @@
       var COUNTY_LOOKUP = {};
       COUNTY_AREAS.forEach(function (c) { COUNTY_LOOKUP[c.name] = c; });
       var POLE_COUNT = COUNTIES.length * 48;
+      var PUBLIC_PROOF_COUNTY = "Wayne";
+      var WAYNE_PUBLIC_PROOF = {
+        county: "Wayne",
+        label: "Wayne County public proof slice",
+        verifiedAt: "2026-05-16",
+        disclosure: "Statewide pole inventory is synthetic for demo coverage. Wayne County demonstrates the same receipt pipeline with real public layers; DTE asset, outage, and inspection data would convert this into a production prioritization layer.",
+        layers: [
+          {
+            key: "noaa",
+            name: "NOAA storm history",
+            value: "75 Wayne County storm records from 2023 through Jan 2026",
+            detail: "Includes thunderstorm wind, hail, tornado, flash flood, flood, ice/snow, winter weather, and high-wind records from NCEI Storm Events bulk CSV.",
+            source: "NCEI Storm Events"
+          },
+          {
+            key: "fema",
+            name: "FEMA flood risk",
+            value: "4,397 NFHL flood-hazard zone features intersect the Wayne bbox",
+            detail: "Queried FEMA NFHL MapServer layer 28, Flood Hazard Zones, over the Detroit/Wayne working envelope.",
+            source: "FEMA NFHL"
+          },
+          {
+            key: "ssurgo",
+            name: "USDA soil/drainage",
+            value: "SSURGO area MI163, Wayne County, Michigan",
+            detail: "Drainage table includes 313 somewhat poorly drained, 83 poorly drained, 54 hydric poorly drained, and 21 hydric very poorly drained components.",
+            source: "USDA NRCS Soil Data Access"
+          },
+          {
+            key: "usgs",
+            name: "USGS elevation/slope",
+            value: "3DEP 1/3 arc-second GeoTIFF tiles n43w083 and n43w084",
+            detail: "The National Map query returned two public 3DEP elevation tiles covering the Wayne proof envelope.",
+            source: "USGS 3DEP"
+          },
+          {
+            key: "imagery",
+            name: "Vegetation imagery",
+            value: "Landsat/NAIP/Sentinel public imagery source stack",
+            detail: "The demo uses a canopy/ROW proxy tied to public imagery sources; production would compute parcel-level NDVI/canopy distance directly.",
+            source: "USGS Landsat, USDA NAIP, Copernicus Sentinel"
+          },
+          {
+            key: "osm",
+            name: "OSM/open infrastructure",
+            value: "49,058 OSM power pole/tower/line features in the Wayne bbox",
+            detail: "Overpass count returned 46,530 nodes and 2,528 ways; used as open infrastructure context, not DTE asset truth.",
+            source: "OpenStreetMap / Overpass"
+          }
+        ]
+      };
 
       var STATIONS = [
         ["Detroit Metro", -83.3308, 42.2313],
@@ -3017,6 +3175,8 @@
         density: "comfortable",
         accent: "blue",
         showAlerts: false,
+        stormMode: false,
+        demoMode: false,
         searchQuery: "",
         searchStatus: "Search a Michigan county or city to focus the map and receipt.",
         selectedId: null
@@ -3068,6 +3228,7 @@
         worklistSummary: document.getElementById("worklistSummary"),
         cycleSummary: document.getElementById("cycleSummary"),
         fieldMeta: document.getElementById("fieldMeta"),
+        stormScenario: document.getElementById("stormScenario"),
         receiptStatus: document.getElementById("receiptStatus"),
         receiptShell: document.getElementById("receiptShell"),
         exportCsv: document.getElementById("exportCsv"),
@@ -3188,15 +3349,52 @@
         return "Monitor";
       }
 
-      function makeDrivers(features) {
+      function publicProofFactors(county, lat, lon) {
+        if (county !== PUBLIC_PROOF_COUNTY) return null;
+        var detroitRiverBand = lon > -83.13 || lat < 42.20;
+        var urbanCore = lat > 42.25 && lat < 42.43 && lon > -83.30 && lon < -82.92;
+        return {
+          vegetation: urbanCore ? 0.70 : 0.58,
+          wind: 0.86,
+          flood: detroitRiverBand ? 0.80 : 0.58,
+          soil: detroitRiverBand ? 0.78 : 0.64,
+          access: urbanCore ? 0.42 : 0.58,
+          criticality: urbanCore ? 0.92 : 0.76
+        };
+      }
+
+      function driverSource(key, county) {
+        if (county === PUBLIC_PROOF_COUNTY) {
+          return {
+            vegetation: "Landsat/NAIP/Sentinel public imagery canopy and ROW proxy",
+            lean: "synthetic structure proxy; DTE inspection validation required",
+            wind: "NOAA NCEI Storm Events for Wayne County, 2023-Jan 2026",
+            flood: "FEMA NFHL Flood Hazard Zones intersecting the Wayne proof bbox",
+            soil: "USDA NRCS SSURGO MI163 drainage and hydric component table",
+            criticality: "Open basemap density and critical-load proxy for Detroit/Wayne",
+            access: "OSM road and power-infrastructure context from the Wayne bbox"
+          }[key];
+        }
+        return {
+          vegetation: "image-derived NDVI / right-of-way proxy",
+          lean: "image-derived geometry proxy",
+          wind: "NOAA-style climate normals",
+          flood: "FEMA-style flood / drainage proxy",
+          soil: "soil drainage / freeze-thaw proxy",
+          criticality: "critical load / customer-density proxy",
+          access: "road access / work-zone proxy"
+        }[key];
+      }
+
+      function makeDrivers(features, county) {
         var rows = [
-          { key: "vegetation", label: "Canopy contact growth", source: "image-derived NDVI / right-of-way proxy", weight: features.vegetation * 0.30 },
-          { key: "lean", label: "Pole lean and structure signal", source: "image-derived geometry proxy", weight: features.lean * 0.27 },
-          { key: "wind", label: "High wind and ice exposure", source: "NOAA-style climate normals", weight: features.wind * 0.22 },
-          { key: "flood", label: "Flood and drainage exposure", source: "FEMA-style flood / drainage proxy", weight: features.flood * 0.19 },
-          { key: "soil", label: "Soil moisture and base decay", source: "soil drainage / freeze-thaw proxy", weight: features.soil * 0.17 },
-          { key: "criticality", label: "Outage consequence criticality", source: "critical load / customer-density proxy", weight: features.criticality * 0.16 },
-          { key: "access", label: "Crew access friction", source: "road access / work-zone proxy", weight: features.access * 0.11 }
+          { key: "vegetation", label: "Canopy contact growth", source: driverSource("vegetation", county), weight: features.vegetation * 0.30 },
+          { key: "lean", label: "Pole lean and structure signal", source: driverSource("lean", county), weight: features.lean * 0.27 },
+          { key: "wind", label: "High wind and ice exposure", source: driverSource("wind", county), weight: features.wind * 0.22 },
+          { key: "flood", label: "Flood and drainage exposure", source: driverSource("flood", county), weight: features.flood * 0.19 },
+          { key: "soil", label: "Soil moisture and base decay", source: driverSource("soil", county), weight: features.soil * 0.17 },
+          { key: "criticality", label: "Outage consequence criticality", source: driverSource("criticality", county), weight: features.criticality * 0.16 },
+          { key: "access", label: "Crew access friction", source: driverSource("access", county), weight: features.access * 0.11 }
         ];
         rows.sort(function (a, b) { return b.weight - a.weight; });
         return rows;
@@ -3221,15 +3419,26 @@
           var soil = clamp(random() * 0.72 + flood * 0.22, 0, 1);
           var access = clamp(random() * 0.66 + (area.zone === "up" || area.zone === "north" ? 0.18 : 0) + (area.zone === "urban" ? 0.06 : 0), 0, 1);
           var criticality = clamp(Math.pow(random(), 0.6) + (area.zone === "urban" ? 0.22 : area.zone === "west" ? 0.08 : 0), 0, 1);
+          var proofFactors = publicProofFactors(county, lat, lon);
+          if (proofFactors) {
+            vegetation = clamp(vegetation * 0.58 + proofFactors.vegetation * 0.42, 0, 1);
+            wind = clamp(wind * 0.45 + proofFactors.wind * 0.55, 0, 1);
+            flood = clamp(flood * 0.48 + proofFactors.flood * 0.52, 0, 1);
+            soil = clamp(soil * 0.50 + proofFactors.soil * 0.50, 0, 1);
+            access = clamp(access * 0.60 + proofFactors.access * 0.40, 0, 1);
+            criticality = clamp(criticality * 0.54 + proofFactors.criticality * 0.46, 0, 1);
+          }
           var report = random() > 0.955 ? (random() > 0.55 ? "verified" : "pending") : "none";
           var sourceCompleteness = 3 + (random() > 0.25 ? 1 : 0) + (random() > 0.45 ? 1 : 0);
-          var confidence = clamp(0.50 + sourceCompleteness * 0.082 + (report === "verified" ? 0.08 : 0) - (lean > 0.8 ? 0.04 : 0), 0.52, 0.96);
+          if (proofFactors) sourceCompleteness = 5;
+          var confidence = clamp(0.50 + sourceCompleteness * 0.082 + (report === "verified" ? 0.08 : 0) + (proofFactors ? 0.05 : 0) - (lean > 0.8 ? 0.04 : 0), 0.52, 0.96);
           var raw = -3.15 + countyRisk +
             vegetation * 1.45 + lean * 1.55 + wind * 1.00 +
             flood * 0.90 + soil * 0.75 + age * 0.55 + criticality * 0.35;
           var risk = clamp(sigmoid(raw), 0.02, 0.97);
           if (report === "verified") risk = clamp(risk + 0.10, 0.02, 0.99);
-          var drivers = makeDrivers({ vegetation: vegetation, lean: lean, wind: wind, flood: flood, soil: soil, access: access, criticality: criticality });
+          var features = { vegetation: vegetation, lean: lean, wind: wind, flood: flood, soil: soil, access: access, criticality: criticality };
+          var drivers = makeDrivers(features, county);
           var segment = "C" + String(1 + countyIndex).padStart(2, "0") + "-S" + (1 + Math.floor(i / COUNTIES.length) % 8);
           var streetContext = streetContextFor(county, Math.floor(i / COUNTIES.length) + countyIndex);
           var p = {
@@ -3244,6 +3453,17 @@
             confidence: round(confidence, 4),
             age: round(age, 3),
             sourceCompleteness: sourceCompleteness,
+            dataProof: proofFactors ? "real" : (confidence < 0.67 || sourceCompleteness < 4 ? "validation" : "synthetic"),
+            publicProofCounty: !!proofFactors,
+            features: {
+              vegetation: round(vegetation, 3),
+              lean: round(lean, 3),
+              wind: round(wind, 3),
+              flood: round(flood, 3),
+              soil: round(soil, 3),
+              access: round(access, 3),
+              criticality: round(criticality, 3)
+            },
             report: report,
             criticality: round(criticality, 3),
             outageMinutes: Math.round(110 + risk * criticality * 980 + random() * 150),
@@ -3685,6 +3905,29 @@
           '<span>Planner test: next-week schedule ready</span>';
       }
 
+      function topWaynePackets(limit) {
+        return POLES.filter(function (p) { return p.county === PUBLIC_PROOF_COUNTY; }).sort(function (a, b) {
+          return priority(b) - priority(a);
+        }).slice(0, limit || 10);
+      }
+
+      function renderStormScenario(rows, packets) {
+        if (!els.stormScenario) return;
+        var wayneTop = topWaynePackets(10);
+        var wayneCritical = wayneTop.filter(function (p) { return p.tier === "critical"; }).length;
+        var isWayne = state.county === PUBLIC_PROOF_COUNTY;
+        els.stormScenario.innerHTML =
+          '<div><strong>Before-storm scenario</strong><span>' +
+          (state.stormMode ? "Active demo: " : "") +
+          '70 mph wind forecast enters Southeast Michigan. PoleProof reranks Wayne County using the public proof slice, lifting ' +
+          wayneTop.length + ' top packets' + (wayneCritical ? " with " + wayneCritical + " critical fixes" : "") +
+          ' before the storm window.</span></div>' +
+          '<div class="btn-row">' +
+            '<button class="action-btn secondary" type="button" data-command="demo">Run demo</button>' +
+            '<button class="action-btn secondary" type="button" data-command="demoReceipt">' + (isWayne ? "Open top receipt" : "Focus Wayne") + '</button>' +
+          '</div>';
+      }
+
       var LEAFLET_JS_URL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       var OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
       var MICHIGAN_MASK_OUTER = [
@@ -3796,6 +4039,105 @@
         return "No immediate action: this pole stays in routine inspection unless new field evidence changes the receipt.";
       }
 
+      function dataProofBadge(p) {
+        if (p.publicProofCounty) {
+          return {
+            cls: "real",
+            label: "Real public layers attached",
+            detail: WAYNE_PUBLIC_PROOF.label + " / verified " + WAYNE_PUBLIC_PROOF.verifiedAt
+          };
+        }
+        if (p.dataProof === "validation") {
+          return {
+            cls: "validation",
+            label: "Needs DTE validation",
+            detail: "Low-confidence or incomplete-source demo receipt; do not dispatch without DTE inspection/work-order corroboration."
+          };
+        }
+        return {
+          cls: "synthetic",
+          label: "Synthetic demo estimate",
+          detail: "Generated for statewide coverage from public-data-style proxies; production requires DTE asset and outcome data."
+        };
+      }
+
+      function sourceManifestFor(p) {
+        if (p.publicProofCounty) return WAYNE_PUBLIC_PROOF.layers;
+        return [
+          { name: "Weather exposure", value: "NOAA-style wind, ice, storm, and precipitation proxies", detail: "Synthetic statewide values shaped to match plausible Michigan risk geography.", source: "public-data-style proxy" },
+          { name: "Imagery / vegetation", value: "Landsat/NAIP/Sentinel-style canopy and ROW proxy", detail: "Demo vegetation score; production should compute from real image tiles.", source: "public-data-style proxy" },
+          { name: "Flood / terrain / soil", value: "FEMA/USGS/SSURGO-style flood, slope, drainage, and soil-moisture proxy", detail: "Statewide synthetic estimate, held behind receipt disclosure.", source: "public-data-style proxy" },
+          { name: "Infrastructure context", value: "Open basemap, road access, and criticality proxy", detail: "Open context only; DTE asset truth is not included.", source: "public-data-style proxy" }
+        ];
+      }
+
+      function guardrailPenalty(p) {
+        return state.confidenceGuard && p.confidence < 0.67 && p.risk < 0.74 && p.report !== "verified" ? 0.15 : 0;
+      }
+
+      function featureValue(p, key) {
+        return p.features && typeof p.features[key] === "number" ? p.features[key] : 0;
+      }
+
+      function renderDataProofPanel(p) {
+        var proof = dataProofBadge(p);
+        var layers = sourceManifestFor(p).map(function (layer) {
+          return '<div class="proof-item"><strong>' + esc(layer.name) + '</strong><span>' +
+            esc(layer.value) + '<br>' + esc(layer.detail) + '<br>Source: ' + esc(layer.source) + '</span></div>';
+        }).join("");
+        var note = p.publicProofCounty ? WAYNE_PUBLIC_PROOF.disclosure :
+          "This receipt is useful for judging workflow and explainability, but it is not claiming actual DTE asset condition.";
+        return '<div class="receipt-card">' +
+          '<div class="receipt-top"><h3>Data proof</h3><p>' + esc(proof.detail) + '</p></div>' +
+          '<div class="receipt-body">' +
+            '<div class="data-proof ' + esc(proof.cls) + '">' + esc(proof.label) + '</div>' +
+            '<div class="proof-grid">' + layers + '</div>' +
+            '<div class="street-context-note"><strong>Honest submission wording:</strong> ' + esc(note) + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderFormulaPanel(p) {
+        var guard = guardrailPenalty(p);
+        var items = [
+          ["Vegetation", featureValue(p, "vegetation"), "canopy/ROW contact pressure"],
+          ["Storm exposure", featureValue(p, "wind"), "NOAA storm and wind exposure"],
+          ["Flood / soil", clamp((featureValue(p, "flood") + featureValue(p, "soil")) / 2, 0, 1), "flood zones, drainage, soil moisture"],
+          ["Lean / structure", featureValue(p, "lean"), "structure signal; needs field validation"],
+          ["Criticality", featureValue(p, "criticality"), "outage consequence proxy"],
+          ["Guardrail", guard, "low confidence subtracts from packet priority"]
+        ].map(function (item) {
+          return '<div class="formula-item"><strong>' + esc(item[0]) + ' ' + pct1(item[1]) + '</strong><span>' + esc(item[2]) + '</span></div>';
+        }).join("");
+        return '<div class="receipt-card">' +
+          '<div class="receipt-top"><h3>Scoring formula</h3><p>Readable enough for operations and field review; no black-box score without drivers.</p></div>' +
+          '<div class="receipt-body">' +
+            '<div class="formula-line">Risk = vegetation + storm exposure + flood/soil + lean/structure + criticality - confidence guardrail</div>' +
+            '<div class="formula-grid">' + items + '</div>' +
+            '<div class="street-context-note"><strong>Guardrail note:</strong> The guardrail affects dispatch priority. Raw risk remains visible so reviewers can see uncertainty instead of hiding it.</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderValidationPanel(p) {
+        var items = [
+          ["Inspection outcomes", "Compare top-ranked packets against confirmed lean, rot, canopy contact, base decay, and crossarm findings."],
+          ["Outage / work-order history", "Back-test whether top deciles capture more outage minutes and emergency work orders than age-cycle scheduling."],
+          ["Top-packet precision", "Track precision@25 and precision@100 by county, action type, and storm window."],
+          ["Closed-loop weights", "After crews close a receipt, update model weights and keep the old receipt hash for audit replay."],
+          ["Fallback demo", "Static app, live link, screenshots, receipt JSON, and work-packet CSV all remain usable if network layers fail."]
+        ].map(function (item) {
+          return '<div class="validation-item"><strong>' + esc(item[0]) + '</strong><span>' + esc(item[1]) + '</span></div>';
+        }).join("");
+        return '<div class="receipt-card">' +
+          '<div class="receipt-top"><h3>Validation plan</h3><p>How DTE would turn this public-data proof into production accuracy.</p></div>' +
+          '<div class="receipt-body">' +
+            '<div class="validation-grid">' + items + '</div>' +
+            '<div class="street-context-note"><strong>Production handoff:</strong> Add DTE asset IDs, inspection results, outages, work orders, and post-work closures; keep public layers as explainable context.</div>' +
+          '</div>' +
+        '</div>';
+      }
+
       function locationActions(p) {
         return '<div class="location-actions">' +
           '<a class="map-link primary" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open pole estimate in Google Maps</a>' +
@@ -3811,9 +4153,27 @@
         window.open(url, "_blank", "noopener");
       }
 
+      function runJudgeDemo(openReceipt) {
+        state.demoMode = true;
+        state.stormMode = true;
+        state.showAlerts = true;
+        state.objective = "outage";
+        state.county = PUBLIC_PROOF_COUNTY;
+        state.tier = "all";
+        state.minRisk = 35;
+        state.budget = 60;
+        state.searchQuery = "Detroit / Wayne County";
+        var top = topWaynePackets(1)[0];
+        if (top) state.selectedId = top.id;
+        state.searchStatus = "Guided demo: Wayne County public proof slice selected; open the top receipt, review audit proof, then export CSV.";
+        setScreen(openReceipt ? "receipt" : "work");
+      }
+
       function commandItems() {
         var selected = selectedPole();
         return [
+          { id: "demo", label: "Run 90-sec judge demo", group: "Demo", run: function () { runJudgeDemo(false); } },
+          { id: "demoReceipt", label: "Demo: open top Wayne receipt", group: "Demo", run: function () { runJudgeDemo(true); } },
           { id: "work", label: "Go to Field", group: "Screen", run: function () { setScreen("work"); } },
           { id: "receipt", label: "Go to Receipt", group: "Screen", run: function () { setScreen("receipt"); } },
           { id: "google", label: "Open pole estimate in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
@@ -4169,19 +4529,17 @@
           "Receipt hash locks the visible evidence, top drivers, action, and score used for this work cycle.",
           "Post-work follow-up compares before/after condition and expected risk reduction for accountability."
         ];
-        var manifest = [
-          "NOAA-style wind, ice, precipitation, storm path, and freeze-thaw normals.",
-          "Landsat/Sentinel/NAIP-style canopy, pole lean, crossarm, and right-of-way proxies.",
-          "FEMA-style flood exposure plus terrain, slope, drainage, and soil moisture proxies.",
-          "Open basemaps, road access, salt exposure, critical facilities, and outage consequence proxies.",
-          "Moderated resident and crew reports kept outside model training."
-        ];
+        var manifest = sourceManifestFor(p).map(function (layer) {
+          return layer.name + ": " + layer.value;
+        }).concat(["Moderated resident and crew reports kept outside model training."]);
+        var proof = dataProofBadge(p);
         els.receiptStatus.textContent = p.tier + " / " + p.action + " / " + p.hash;
         els.receiptShell.innerHTML =
           '<div class="receipt-card">' +
             '<div class="receipt-top">' +
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
               '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Pole estimate ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
+              '<div class="data-proof ' + esc(proof.cls) + '">' + esc(proof.label) + '</div>' +
               '<div class="resident-summary"><strong>Plain-language reason</strong>' + esc(plainReceiptSentence(p)) + '</div>' +
               '<div class="resident-summary impact"><strong>What this means for me</strong>' + esc(residentImpactLine(p)) + '</div>' +
               '<div class="challenge-fit" aria-label="DTE challenge fit">' +
@@ -4209,13 +4567,17 @@
             '<div class="receipt-top"><h3>Crew packet</h3><p>' + esc(p.action) + ' / target window ' + esc(nextWindow) + '</p></div>' +
             '<div class="receipt-body packet-grid">' +
               '<div class="packet-line"><span>Job code</span><strong>' + esc(jobCode(p)) + '</strong></div>' +
-              '<div class="packet-line"><span>Recommendation</span><strong>' + esc(p.action) + ' because ' + esc(plainDriverLabel(p.drivers[0])) + ' is the leading risk driver</strong></div>' +
-              '<div class="packet-line"><span>Materials</span><strong>' + esc(materials) + '</strong></div>' +
-              '<div class="packet-line"><span>Checklist</span><strong>verify pole ID, capture four photos, inspect base, log driver evidence, close receipt with disposition</strong></div>' +
-              '<div class="packet-line"><span>Economics</span><strong>' + money(p.outageMinutes * p.reduction * 18) + ' avoided outage value before truck-roll cost</strong></div>' +
+              '<div class="packet-line"><span>Recommended action</span><strong>' + esc(p.action) + ' because ' + esc(plainDriverLabel(p.drivers[0])) + ' is the leading risk driver</strong></div>' +
+              '<div class="packet-line"><span>Target window</span><strong>' + esc(nextWindow) + ' before lower-risk work in the same cycle</strong></div>' +
+              '<div class="packet-line"><span>Materials / equipment</span><strong>' + esc(materials) + '</strong></div>' +
+              '<div class="packet-line"><span>Crew checklist</span><strong>verify pole ID, capture four photos, inspect base and attachment points, log driver evidence, close receipt with disposition</strong></div>' +
+              '<div class="packet-line"><span>Expected risk drop</span><strong>' + pct1(p.reduction) + ' / ' + money(p.outageMinutes * p.reduction * 18) + ' avoided outage value before truck-roll cost</strong></div>' +
+              '<div class="packet-line"><span>CSV export</span><strong><button class="action-btn secondary" type="button" data-command="csv">Export current work packets CSV</button></strong></div>' +
               '<div class="packet-line"><span>Report</span><strong>' + esc(p.report === "none" ? "no corroborating field report" : p.report + " corroborating report") + '</strong></div>' +
             '</div>' +
           '</div>' +
+          renderDataProofPanel(p) +
+          renderFormulaPanel(p) +
           '<div class="receipt-card">' +
             '<div class="receipt-top"><h3>Decision audit</h3><p>Guardrails, provenance, and source manifest for regulator and crew review.</p></div>' +
             '<div class="receipt-body">' +
@@ -4228,7 +4590,8 @@
               }).join("") + '</ul>' +
               '<div class="street-context-note"><strong>Validation-ready label:</strong> Synthetic-demo estimates are clearly disclosed here and ready to be checked against DTE inspection, outage, and work-order outcomes.</div>' +
             '</div>' +
-          '</div>';
+          '</div>' +
+          renderValidationPanel(p);
       }
 
       function jobCode(p) {
@@ -4241,12 +4604,12 @@
 
       function exportCsv() {
         var rows = packetRows();
-        var head = ["rank", "receipt", "pole_id", "county", "segment", "risk", "confidence", "tier", "action", "expected_risk_drop", "top_driver", "receipt_hash"];
+        var head = ["rank", "receipt", "pole_id", "county", "segment", "risk", "confidence", "tier", "action", "expected_risk_drop", "data_proof", "top_driver", "receipt_hash"];
         var lines = [head.join(",")];
         rows.forEach(function (p, i) {
           lines.push([
             i + 1, p.receipt, p.id, p.county, p.segment, p.risk, p.confidence, p.tier,
-            p.action, p.reduction, p.drivers[0].label, p.hash
+            p.action, p.reduction, dataProofBadge(p).label, p.drivers[0].label, p.hash
           ].map(csv).join(","));
         });
         download("poleproof_work_packets.csv", lines.join("\n"), "text/csv");
@@ -4258,6 +4621,14 @@
         var payload = {
           exported_at: new Date().toISOString(),
           app: "PoleProof",
+          data_proof: dataProofBadge(p),
+          public_layers: sourceManifestFor(p),
+          validation_plan: [
+            "compare against DTE inspection outcomes",
+            "compare against outage and work-order history",
+            "track precision of top-ranked packets",
+            "update weights after field closure while preserving receipt hash"
+          ],
           receipt: p
         };
         download("poleproof_" + p.receipt + ".json", JSON.stringify(payload, null, 2), "application/json");
@@ -4295,6 +4666,7 @@
         renderControls();
         renderDisplayControls();
         renderFieldMeta(rows, packets);
+        renderStormScenario(rows, packets);
         drawMap(rows, packets);
         renderTable(rows, packets);
         renderReceipt(selectedPole());
@@ -4385,7 +4757,11 @@
         if (realMap.ready) realMap.map.invalidateSize();
       });
 
-      render();
+      if (new URLSearchParams(window.location.search).get("demo") === "1") {
+        runJudgeDemo(new URLSearchParams(window.location.search).get("screen") === "receipt");
+      } else {
+        render();
+      }
     })();
   </script>
 </body>
