@@ -7,12 +7,50 @@
   <title>PoleProof - Utility Pole Risk Receipts</title>
   <style>
     :root {
+      color-scheme: dark;
+      --ink: #edf5ee;
+      --muted: #8d9b91;
+      --subtle: #b9c7bd;
+      --line: #26372f;
+      --line-strong: #3a5448;
+      --paper: #07100d;
+      --panel: #0c1712;
+      --panel-2: #111f18;
+      --panel-3: #16251d;
+      --field: #0a1511;
+      --map-bg: #08130f;
+      --map-grid: #1b3027;
+      --map-water: #123341;
+      --green: #37b37f;
+      --green-dark: #1e7a55;
+      --amber: #e1a649;
+      --red: #ef6358;
+      --blue: #57a9dc;
+      --violet: #9c83e8;
+      --accent: var(--green);
+      --accent-dark: var(--green-dark);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      --radius: 6px;
+      --control-height: 36px;
+      --panel-pad: 16px;
+      --table-y: 8px;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
       --ink: #141714;
       --muted: #5d655d;
+      --subtle: #334036;
       --line: #cbd5c7;
+      --line-strong: #9cac96;
       --paper: #f6f8f3;
       --panel: #ffffff;
+      --panel-2: #fbfcf8;
+      --panel-3: #eef4ea;
       --field: #e8eee4;
+      --map-bg: #e8eee4;
+      --map-grid: #d8e0d3;
+      --map-water: #cbdfe7;
       --green: #247553;
       --green-dark: #174d38;
       --amber: #b66f1d;
@@ -20,6 +58,27 @@
       --blue: #2d6796;
       --violet: #6951a3;
       --shadow: 0 8px 30px rgba(24, 32, 20, 0.08);
+    }
+
+    :root[data-accent="blue"] {
+      --accent: var(--blue);
+      --accent-dark: #2c6f9e;
+    }
+
+    :root[data-accent="green"] {
+      --accent: var(--green);
+      --accent-dark: var(--green-dark);
+    }
+
+    :root[data-accent="amber"] {
+      --accent: var(--amber);
+      --accent-dark: #a56a22;
+    }
+
+    :root[data-density="comfortable"] {
+      --control-height: 42px;
+      --panel-pad: 20px;
+      --table-y: 11px;
     }
 
     * { box-sizing: border-box; }
@@ -30,6 +89,7 @@
       background: var(--paper);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
     }
 
     button, select, input, textarea {
@@ -343,7 +403,7 @@
     .map-shell {
       position: relative;
       overflow: hidden;
-      min-height: 430px;
+      min-height: 360px;
       border: 1px solid var(--line);
       border-radius: 6px;
       background: var(--field);
@@ -353,8 +413,8 @@
     #map {
       display: block;
       width: 100%;
-      height: min(54vh, 520px);
-      min-height: 430px;
+      height: min(42vh, 430px);
+      min-height: 360px;
     }
 
     .map-tip {
@@ -429,6 +489,14 @@
       font-weight: 850;
       text-transform: uppercase;
     }
+
+    th:nth-child(1), td:nth-child(1) { width: 94px; }
+    th:nth-child(2), td:nth-child(2) { width: 126px; }
+    th:nth-child(3), td:nth-child(3) { width: 82px; }
+    th:nth-child(4), td:nth-child(4) { width: 112px; }
+    th:nth-child(5), td:nth-child(5) { width: 92px; }
+    th:nth-child(6), td:nth-child(6) { width: 92px; }
+    th:nth-child(7), td:nth-child(7) { min-width: 126px; }
 
     tr.row {
       cursor: pointer;
@@ -629,9 +697,522 @@
     .green { color: var(--green); }
     .blue { color: var(--blue); }
 
+    .topbar {
+      min-height: 68px;
+      padding: 14px 22px;
+      background: linear-gradient(180deg, #0c1711 0%, #07100d 100%);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    :root[data-theme="light"] .topbar {
+      color: #f8fbf5;
+      background: #111612;
+    }
+
+    :root[data-theme="light"] .brand p {
+      color: #b9c5b5;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .brand::before {
+      content: "";
+      width: 10px;
+      height: 36px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--accent), var(--blue));
+      box-shadow: 0 0 24px rgba(55, 179, 127, 0.22);
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      letter-spacing: 0.08em;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .pill {
+      border-color: var(--line-strong);
+      color: var(--subtle);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .ops-banner {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--line);
+      color: var(--subtle);
+      background: var(--panel-2);
+      font-size: 12px;
+    }
+
+    .ops-banner[hidden] { display: none; }
+
+    .ops-banner strong {
+      color: var(--ink);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .ops-banner span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-right: 14px;
+      white-space: nowrap;
+    }
+
+    .ops-banner i {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 14px var(--accent);
+    }
+
+    .kpis {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .kpi {
+      position: relative;
+      min-height: 104px;
+      padding: 15px 18px 14px;
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    }
+
+    .kpi::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: 0.86;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .kpi strong {
+      color: var(--ink);
+      font-size: 27px;
+    }
+
+    .kpi em {
+      color: var(--muted);
+    }
+
+    .kpi-meter {
+      height: 4px;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(141, 155, 145, 0.22);
+    }
+
+    .kpi-meter i {
+      display: block;
+      height: 100%;
+      width: 40%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--blue));
+    }
+
+    .shell {
+      grid-template-columns: 284px minmax(500px, 1fr) 392px;
+      min-height: calc(100vh - 206px);
+      background: var(--paper);
+    }
+
+    .panel {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    .controls,
+    .receipt {
+      padding: var(--panel-pad);
+    }
+
+    .section {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section h2,
+    .field-title h2,
+    .receipt h2 {
+      color: var(--ink);
+      letter-spacing: 0.08em;
+    }
+
+    label {
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    select,
+    textarea,
+    input[type="text"] {
+      min-height: var(--control-height);
+      border-color: var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--panel-2);
+      outline: none;
+    }
+
+    select:focus,
+    textarea:focus,
+    input[type="text"]:focus,
+    button:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+      outline: none;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent);
+    }
+
+    .range-row {
+      color: var(--muted);
+    }
+
+    .segmented,
+    .multi-chip {
+      display: grid;
+      gap: 7px;
+    }
+
+    .multi-chip {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .chip {
+      min-height: var(--control-height);
+      border-color: var(--line);
+      border-radius: var(--radius);
+      color: var(--subtle);
+      background: var(--panel-2);
+      letter-spacing: 0.02em;
+    }
+
+    .chip.active {
+      color: #06100c;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .chip:hover,
+    .action-btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .action-btn {
+      min-height: var(--control-height);
+      border-radius: var(--radius);
+      color: #06100c;
+      background: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    .action-btn.secondary {
+      color: var(--ink);
+      background: var(--panel-2);
+      border-color: var(--line-strong);
+    }
+
+    .source-list li,
+    .toggle {
+      color: var(--subtle);
+    }
+
+    .source-list i {
+      background: var(--accent);
+    }
+
+    .field {
+      background: var(--field);
+    }
+
+    .field-wrap {
+      padding: var(--panel-pad);
+    }
+
+    .field-title {
+      margin-bottom: 10px;
+    }
+
+    .field-title p {
+      color: var(--muted);
+    }
+
+    .field-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .field-meta span {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .legend {
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .map-shell {
+      border-color: var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--map-bg);
+      box-shadow: var(--shadow);
+    }
+
+    .map-tip {
+      border-color: var(--line-strong);
+      color: var(--ink);
+      background: rgba(7, 16, 13, 0.95);
+    }
+
+    .worklist {
+      border-color: var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .worklist-head {
+      border-bottom-color: var(--line);
+      background: var(--panel-2);
+    }
+
+    .worklist-head strong {
+      color: var(--ink);
+      letter-spacing: 0.06em;
+    }
+
+    .worklist-head span {
+      color: var(--muted);
+    }
+
+    table {
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: var(--table-y) 10px;
+      border-bottom-color: var(--line);
+    }
+
+    th {
+      color: var(--muted);
+      background: var(--panel-2);
+      letter-spacing: 0.08em;
+    }
+
+    tr.row:hover,
+    tr.row.active {
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+
+    tr.row.active td:first-child {
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .packet-badge {
+      display: inline-flex;
+      margin-left: 6px;
+      padding: 2px 5px;
+      border: 1px solid color-mix(in srgb, var(--blue) 62%, transparent);
+      border-radius: 999px;
+      color: var(--blue);
+      font-size: 9px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .risk-cell {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 7px;
+      align-items: center;
+      min-width: 92px;
+    }
+
+    .risk-meter {
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(141, 155, 145, 0.22);
+    }
+
+    .risk-meter i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .tier {
+      border-radius: var(--radius);
+      letter-spacing: 0.06em;
+    }
+
+    .receipt {
+      background: var(--panel);
+    }
+
+    .receipt-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin: calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1) 14px;
+      padding: 14px var(--panel-pad);
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--panel) 94%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    .receipt-header h2 {
+      margin: 0;
+    }
+
+    .receipt-status {
+      max-width: 210px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 850;
+      line-height: 1.3;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .receipt-shell {
+      gap: 12px;
+    }
+
+    .receipt-card {
+      border-color: var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: none;
+    }
+
+    .receipt-top {
+      border-bottom-color: var(--line);
+      background: var(--panel-2);
+    }
+
+    .receipt-top h3 {
+      color: var(--ink);
+      letter-spacing: 0.01em;
+    }
+
+    .receipt-top p {
+      color: var(--muted);
+    }
+
+    .receipt-lock {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .receipt-lock span {
+      padding: 4px 7px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--subtle);
+      background: var(--panel);
+      font-size: 10px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .score-box {
+      border-color: var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .score-box span,
+    .packet-line span {
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .score-box strong {
+      color: var(--ink);
+    }
+
+    .score-box strong.red { color: var(--red); }
+    .score-box strong.amber { color: var(--amber); }
+    .score-box strong.green { color: var(--green); }
+    .score-box strong.blue { color: var(--blue); }
+
+    .driver,
+    .packet-line {
+      border-bottom-color: var(--line);
+    }
+
+    .driver span {
+      color: var(--muted);
+    }
+
+    .bar {
+      background: rgba(141, 155, 145, 0.22);
+    }
+
+    .bar i {
+      background: linear-gradient(90deg, var(--accent), var(--blue));
+    }
+
+    .audit li {
+      border-left-color: var(--accent);
+      background: var(--panel-2);
+    }
+
+    .empty,
+    .footer {
+      color: var(--muted);
+      background: var(--panel-2);
+      border-color: var(--line);
+    }
+
     @media (max-width: 1180px) {
       .shell {
-        grid-template-columns: 280px minmax(420px, 1fr);
+        grid-template-columns: 284px minmax(420px, 1fr);
       }
 
       .receipt {
@@ -641,12 +1222,20 @@
     }
 
     @media (max-width: 820px) {
-      .topbar, .field-title, .worklist-head {
+      .topbar, .ops-banner, .field-title, .worklist-head {
         grid-template-columns: 1fr;
       }
 
       .top-actions, .legend {
         justify-content: flex-start;
+      }
+
+      .ops-banner {
+        padding: 10px 16px;
+      }
+
+      .ops-banner span {
+        white-space: normal;
       }
 
       .kpis {
@@ -659,6 +1248,7 @@
 
       .shell {
         grid-template-columns: 1fr;
+        min-height: auto;
       }
 
       .panel {
@@ -666,8 +1256,39 @@
         border-bottom: 1px solid var(--line);
       }
 
+      .receipt-header {
+        position: static;
+      }
+
       th, td {
         padding: 8px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar {
+        padding: 14px 16px;
+      }
+
+      .brand {
+        align-items: flex-start;
+      }
+
+      .kpis {
+        grid-template-columns: 1fr;
+      }
+
+      .multi-chip {
+        grid-template-columns: 1fr;
+      }
+
+      .risk-cell {
+        grid-template-columns: 1fr;
+        min-width: 76px;
+      }
+
+      #map {
+        min-height: 320px;
       }
     }
 
@@ -692,6 +1313,8 @@
       <span class="pill">Synthetic demo · validation-ready</span>
     </div>
   </header>
+
+  <section class="ops-banner" id="opsBanner" aria-live="polite"></section>
 
   <section class="kpis" id="kpis" aria-label="PoleProof performance indicators"></section>
 
@@ -738,6 +1361,20 @@
       </div>
 
       <div class="section">
+        <h2>Display</h2>
+        <label>Theme</label>
+        <div class="segmented" id="themeControls"></div>
+        <label>Density</label>
+        <div class="segmented" id="densityControls"></div>
+        <label>Accent</label>
+        <div class="multi-chip" id="accentControls"></div>
+        <label class="toggle">
+          <input id="showAlerts" type="checkbox" checked>
+          <span>Show the active incident and validation banner above the instrument panel.</span>
+        </label>
+      </div>
+
+      <div class="section">
         <h2>Exports</h2>
         <div class="btn-row">
           <button class="action-btn" id="exportCsv">Export work packets CSV</button>
@@ -764,6 +1401,7 @@
           <div>
             <h2>Evidence field</h2>
             <p id="fieldSubtitle">Synthetic Southeast Michigan pole fleet with receipt-level evidence and crew packets.</p>
+            <div class="field-meta" id="fieldMeta"></div>
           </div>
           <div class="legend">
             <span><i class="dot" style="background: var(--red)"></i>Critical</span>
@@ -808,6 +1446,10 @@
     </main>
 
     <aside class="panel receipt" aria-label="Selected risk receipt">
+      <div class="receipt-header">
+        <h2>Selected receipt</h2>
+        <span class="receipt-status" id="receiptStatus"></span>
+      </div>
       <div class="receipt-shell" id="receiptShell"></div>
     </aside>
   </div>
@@ -848,10 +1490,15 @@
         confidenceGuard: true,
         communityOverlay: true,
         explainability: true,
+        theme: "dark",
+        density: "compact",
+        accent: "green",
+        showAlerts: true,
         selectedId: null
       };
 
       var els = {
+        opsBanner: document.getElementById("opsBanner"),
         kpis: document.getElementById("kpis"),
         objective: document.getElementById("objective"),
         tierControls: document.getElementById("tierControls"),
@@ -863,11 +1510,17 @@
         confidenceGuard: document.getElementById("confidenceGuard"),
         communityOverlay: document.getElementById("communityOverlay"),
         explainability: document.getElementById("explainability"),
+        themeControls: document.getElementById("themeControls"),
+        densityControls: document.getElementById("densityControls"),
+        accentControls: document.getElementById("accentControls"),
+        showAlerts: document.getElementById("showAlerts"),
         map: document.getElementById("map"),
         mapTip: document.getElementById("mapTip"),
         workRows: document.getElementById("workRows"),
         worklistSummary: document.getElementById("worklistSummary"),
         cycleSummary: document.getElementById("cycleSummary"),
+        fieldMeta: document.getElementById("fieldMeta"),
+        receiptStatus: document.getElementById("receiptStatus"),
         receiptShell: document.getElementById("receiptShell"),
         footer: document.getElementById("footer"),
         exportCsv: document.getElementById("exportCsv"),
@@ -905,6 +1558,11 @@
         var h = 5381;
         for (var i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
         return "PP-" + (h >>> 0).toString(16).toUpperCase().padStart(8, "0");
+      }
+
+      function cssVar(name, fallback) {
+        var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value || fallback;
       }
 
       function lonForCounty(i, jitter) {
@@ -1055,11 +1713,11 @@
 
       function colorForTier(tier) {
         return {
-          critical: "#bd392f",
-          high: "#b66f1d",
+          critical: cssVar("--red", "#ef6358"),
+          high: cssVar("--amber", "#e1a649"),
           elevated: "#d9c537",
-          routine: "#247553"
-        }[tier] || "#247553";
+          routine: cssVar("--green", "#37b37f")
+        }[tier] || cssVar("--green", "#37b37f");
       }
 
       function projectX(lon) {
@@ -1085,15 +1743,15 @@
         var lift = baseline ? capture / baseline : 0;
         var budgetShare = rows.length ? packets.length / rows.length : 0;
         var kpis = [
-          ["Capture @ budget", pct1(capture), packets.length.toLocaleString("en-US") + " packets / " + pct1(budgetShare) + " of visible fleet"],
-          ["Lift vs age-cycle", lift.toFixed(2) + "x", "synthetic baseline using same inspection budget"],
-          ["Net benefit / cycle", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes"],
-          ["Audit-ready receipts", pct(auditReady), "source-complete, high-confidence crew packets"],
-          ["Validation status", "Synthetic", "ready for DTE holdout labels and pilot scoring"]
+          ["Capture @ budget", pct1(capture), packets.length.toLocaleString("en-US") + " packets / " + pct1(budgetShare) + " of visible fleet", capture],
+          ["Lift vs age-cycle", lift.toFixed(2) + "x", "synthetic baseline using same inspection budget", clamp(lift / 5, 0.08, 1)],
+          ["Net benefit / cycle", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes", clamp(dollars / 1800000, 0.08, 1)],
+          ["Audit-ready receipts", pct(auditReady), "source-complete, high-confidence crew packets", auditReady],
+          ["Validation status", "Synthetic", "ready for DTE holdout labels and pilot scoring", 0.32]
         ];
         els.kpis.innerHTML = kpis.map(function (k) {
           return '<div class="kpi"><span>' + esc(k[0]) + '</span><strong>' + esc(k[1]) +
-            '</strong><em>' + esc(k[2]) + '</em></div>';
+            '</strong><em>' + esc(k[2]) + '</em><div class="kpi-meter"><i style="width:' + pct(clamp(k[3], 0, 1)) + '"></i></div></div>';
         }).join("");
       }
 
@@ -1123,20 +1781,89 @@
         els.explainability.checked = state.explainability;
       }
 
+      function setDisplayAttrs() {
+        document.documentElement.dataset.theme = state.theme;
+        document.documentElement.dataset.density = state.density;
+        document.documentElement.dataset.accent = state.accent;
+      }
+
+      function buttonGroup(el, items, current, attr, onPick) {
+        el.innerHTML = items.map(function (item) {
+          return '<button class="chip ' + (current === item.id ? "active" : "") +
+            '" data-' + attr + '="' + item.id + '">' + esc(item.label) + '</button>';
+        }).join("");
+        Array.prototype.forEach.call(el.querySelectorAll("button"), function (b) {
+          b.addEventListener("click", function () {
+            onPick(b.getAttribute("data-" + attr));
+            render();
+          });
+        });
+      }
+
+      function renderDisplayControls() {
+        buttonGroup(els.themeControls, [
+          { id: "dark", label: "Dark" },
+          { id: "light", label: "Light" }
+        ], state.theme, "theme", function (id) { state.theme = id; });
+        buttonGroup(els.densityControls, [
+          { id: "compact", label: "Compact" },
+          { id: "comfortable", label: "Comfort" }
+        ], state.density, "density", function (id) { state.density = id; });
+        buttonGroup(els.accentControls, [
+          { id: "green", label: "Grid" },
+          { id: "blue", label: "Signal" },
+          { id: "amber", label: "Work" }
+        ], state.accent, "accent", function (id) { state.accent = id; });
+        els.showAlerts.checked = state.showAlerts;
+      }
+
+      function renderOpsBanner(rows, packets) {
+        els.opsBanner.hidden = !state.showAlerts;
+        if (!state.showAlerts) return;
+        var critical = rows.filter(function (p) { return p.tier === "critical"; }).length;
+        var activeCritical = packets.filter(function (p) { return p.tier === "critical"; }).length;
+        var verified = rows.filter(function (p) { return p.report === "verified"; }).length;
+        var top = packets[0];
+        els.opsBanner.innerHTML =
+          '<div><strong>Ops cycle synthetic run</strong> ' +
+          '<span><i></i>' + activeCritical + ' critical packets active</span>' +
+          '<span>' + critical.toLocaleString("en-US") + ' critical receipts in view</span>' +
+          '<span>' + verified + ' verified overlays</span></div>' +
+          '<div><span>Lead action: ' + esc(top ? top.action : "none") + '</span><span>Last generated: 2026-05-16</span></div>';
+      }
+
+      function renderFieldMeta(rows, packets) {
+        var packetIds = {};
+        packets.forEach(function (p) { packetIds[p.id] = true; });
+        var avgRisk = packets.length ? packets.reduce(function (sum, p) { return sum + p.risk; }, 0) / packets.length : 0;
+        var counties = {};
+        packets.forEach(function (p) { counties[p.county] = true; });
+        els.fieldMeta.innerHTML =
+          '<span>' + packets.length + ' packets selected</span>' +
+          '<span>' + rows.length.toLocaleString("en-US") + ' filtered receipts</span>' +
+          '<span>' + Object.keys(counties).length + ' counties</span>' +
+          '<span>avg packet risk ' + pct1(avgRisk) + '</span>';
+      }
+
       function drawBaseMap(svg) {
-        var bg = '<rect x="0" y="0" width="760" height="430" fill="#e8eee4"></rect>';
-        var water = '<path d="M657 41 C725 88 735 160 704 218 C686 252 708 301 675 352 C654 384 619 394 604 360 C588 323 610 274 594 235 C571 179 604 88 657 41Z" fill="#cbdfe7" opacity="0.85"></path>';
+        var mapBg = cssVar("--map-bg", "#08130f");
+        var gridColor = cssVar("--map-grid", "#1b3027");
+        var waterColor = cssVar("--map-water", "#123341");
+        var labelColor = cssVar("--muted", "#8d9b91");
+        var stationColor = cssVar("--blue", "#57a9dc");
+        var bg = '<rect x="0" y="0" width="760" height="430" fill="' + mapBg + '"></rect>';
+        var water = '<path d="M657 41 C725 88 735 160 704 218 C686 252 708 301 675 352 C654 384 619 394 604 360 C588 323 610 274 594 235 C571 179 604 88 657 41Z" fill="' + waterColor + '" opacity="0.9"></path>';
         var grid = "";
-        for (var x = 70; x < 720; x += 80) grid += '<path d="M' + x + ' 40 L' + (x - 36) + ' 392" stroke="#d8e0d3" stroke-width="1"></path>';
-        for (var y = 64; y < 390; y += 54) grid += '<path d="M42 ' + y + ' L718 ' + (y + 22) + '" stroke="#d8e0d3" stroke-width="1"></path>';
+        for (var x = 70; x < 720; x += 80) grid += '<path d="M' + x + ' 40 L' + (x - 36) + ' 392" stroke="' + gridColor + '" stroke-width="1"></path>';
+        for (var y = 64; y < 390; y += 54) grid += '<path d="M42 ' + y + ' L718 ' + (y + 22) + '" stroke="' + gridColor + '" stroke-width="1"></path>';
         var countyLabels = COUNTIES.map(function (c, i) {
           var x = projectX(lonForCounty(i, 0.45));
           var y = projectY(latForCounty(i, 0.45));
-          return '<text x="' + x + '" y="' + y + '" font-size="9" fill="#6b7468" font-weight="800">' + esc(c.toUpperCase()) + '</text>';
+          return '<text x="' + x + '" y="' + y + '" font-size="9" fill="' + labelColor + '" font-weight="800">' + esc(c.toUpperCase()) + '</text>';
         }).join("");
         var stations = STATIONS.map(function (s) {
-          return '<g><circle cx="' + projectX(s[1]) + '" cy="' + projectY(s[2]) + '" r="4" fill="#2d6796"></circle>' +
-            '<text x="' + (projectX(s[1]) + 7) + '" y="' + (projectY(s[2]) + 4) + '" font-size="9" fill="#2d6796" font-weight="800">' + esc(s[0]) + '</text></g>';
+          return '<g><circle cx="' + projectX(s[1]) + '" cy="' + projectY(s[2]) + '" r="4" fill="' + stationColor + '"></circle>' +
+            '<text x="' + (projectX(s[1]) + 7) + '" y="' + (projectY(s[2]) + 4) + '" font-size="9" fill="' + stationColor + '" font-weight="800">' + esc(s[0]) + '</text></g>';
         }).join("");
         svg.innerHTML = bg + water + grid + countyLabels + stations;
       }
@@ -1144,6 +1871,10 @@
       function drawMap(rows, packets) {
         var svg = els.map;
         drawBaseMap(svg);
+        var ink = cssVar("--ink", "#edf5ee");
+        var blue = cssVar("--blue", "#57a9dc");
+        var violet = cssVar("--violet", "#9c83e8");
+        var paper = cssVar("--paper", "#07100d");
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var selected = state.selectedId;
@@ -1152,7 +1883,7 @@
           var x = projectX(p.lon), y = projectY(p.lat);
           var inPacket = packetIds[p.id];
           var r = inPacket ? 5.4 : 3.2;
-          var stroke = p.id === selected ? "#111612" : (inPacket ? "#2d6796" : "#ffffff");
+          var stroke = p.id === selected ? ink : (inPacket ? blue : paper);
           var sw = p.id === selected ? 3 : (inPacket ? 2 : 0.7);
           return '<circle class="node" tabindex="0" data-id="' + p.id + '" cx="' + x.toFixed(2) +
             '" cy="' + y.toFixed(2) + '" r="' + r + '" fill="' + colorForTier(p.tier) +
@@ -1161,7 +1892,7 @@
         var reports = state.communityOverlay ? shown.filter(function (p) { return p.report !== "none"; }).map(function (p) {
           var x = projectX(p.lon), y = projectY(p.lat);
           return '<rect class="report" data-id="' + p.id + '" x="' + (x - 4) + '" y="' + (y - 4) +
-            '" width="8" height="8" transform="rotate(45 ' + x + ' ' + y + ')" fill="#ffffff" stroke="#6951a3" stroke-width="2"></rect>';
+            '" width="8" height="8" transform="rotate(45 ' + x + ' ' + y + ')" fill="' + paper + '" stroke="' + violet + '" stroke-width="2"></rect>';
         }).join("") : "";
         svg.insertAdjacentHTML("beforeend", reports + circles);
 
@@ -1204,10 +1935,10 @@
         els.workRows.innerHTML = rows.slice(0, Math.max(state.budget, 80)).map(function (p, i) {
           var cls = "row" + (p.id === state.selectedId ? " active" : "");
           return '<tr class="' + cls + '" tabindex="0" data-id="' + p.id + '">' +
-            '<td>' + (i + 1) + (packetIds[p.id] ? ' <span class="blue">packet</span>' : "") + '</td>' +
+            '<td>' + (i + 1) + (packetIds[p.id] ? ' <span class="packet-badge">packet</span>' : "") + '</td>' +
             '<td>' + esc(p.receipt) + '</td>' +
             '<td>' + esc(p.county) + '</td>' +
-            '<td>' + pct1(p.risk) + '</td>' +
+            '<td><div class="risk-cell"><span>' + pct1(p.risk) + '</span><div class="risk-meter"><i style="width:' + pct(p.risk) + '; background:' + colorForTier(p.tier) + '"></i></div></div></td>' +
             '<td>' + pct1(p.confidence) + '</td>' +
             '<td><span class="tier ' + p.tier + '">' + esc(p.tier.toUpperCase()) + '</span></td>' +
             '<td>' + esc(p.action) + '</td>' +
@@ -1231,6 +1962,7 @@
 
       function renderReceipt(p) {
         if (!p) {
+          els.receiptStatus.textContent = "No active selection";
           els.receiptShell.innerHTML = '<div class="empty">No pole matches the current filters.</div>';
           return;
         }
@@ -1251,11 +1983,13 @@
           "Receipt hash locks the visible evidence, top drivers, action, and score used for this work cycle.",
           "Post-work follow-up compares before/after condition and expected risk reduction for accountability."
         ];
+        els.receiptStatus.textContent = p.tier + " / " + p.action + " / " + p.hash;
         els.receiptShell.innerHTML =
           '<div class="receipt-card">' +
             '<div class="receipt-top">' +
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
               '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Receipt hash ' + esc(p.hash) + '</p>' +
+              '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
             '</div>' +
             '<div class="receipt-body">' +
               '<div class="big-score">' +
@@ -1342,11 +2076,15 @@
       }
 
       function render() {
+        setDisplayAttrs();
         var rows = filtered();
         var packets = rows.slice(0, state.budget);
         selectFirstIfNeeded(rows);
+        renderOpsBanner(rows, packets);
         renderKpis(rows, packets);
         renderControls();
+        renderDisplayControls();
+        renderFieldMeta(rows, packets);
         drawMap(rows, packets);
         renderTable(rows, packets);
         renderReceipt(selectedPole());
@@ -1379,6 +2117,10 @@
       });
       els.explainability.addEventListener("change", function () {
         state.explainability = els.explainability.checked;
+        render();
+      });
+      els.showAlerts.addEventListener("change", function () {
+        state.showAlerts = els.showAlerts.checked;
         render();
       });
       els.exportCsv.addEventListener("click", exportCsv);
