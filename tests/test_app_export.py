@@ -160,3 +160,178 @@ def test_action_rule_maps_drivers_correctly():
         "flood-zone exposure (FEMA-style)") == "INSPECT (ground)"
     assert _action_for_driver("corrosive soil") == "INSPECT (ground)"
     assert _action_for_driver("electrical loading") == "INSPECT"
+
+
+# --------------------------------------------------------------------------
+# Citizen-corroboration overlay (community field reports). The moderated,
+# repo-committed ledger is folded into the payload as an OVERLAY ONLY: it is
+# a deterministic priority/corroboration signal reconciled against the model
+# and is NEVER model input. These tests do not weaken any test above.
+# --------------------------------------------------------------------------
+
+LEDGER = os.path.join(REPO, "community_reports", "ledger.jsonl")
+
+
+def test_community_ledger_file_parses_and_excludes_rejected():
+    """The committed ledger is valid JSON Lines with the documented fields,
+    and at least one 'rejected' row exists (to prove it is dropped on
+    ingest, not absent from the file)."""
+    assert os.path.isfile(LEDGER), "community_reports/ledger.jsonl missing"
+    rows = []
+    with open(LEDGER, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            rows.append(json.loads(line))  # must be valid JSON
+    assert len(rows) >= 5, "expected 5-6 seed rows"
+    req = ("report_id", "pole_id", "lat", "lon", "county", "conditions",
+           "severity", "note", "reporter", "submitted", "status", "source")
+    for r in rows:
+        for k in req:
+            assert k in r, f"ledger row missing {k}"
+        assert r["severity"] in ("low", "medium", "urgent")
+        assert r["status"] in ("verified", "pending", "rejected")
+        assert r["source"] in ("resident", "lineman", "sample")
+        assert isinstance(r["conditions"], list) and r["conditions"]
+    assert any(r["status"] == "rejected" for r in rows), (
+        "ledger should contain a rejected row to exercise the filter")
+    assert any(r["pole_id"] is None for r in rows), (
+        "ledger should contain one unmapped (pole_id=null) row")
+
+
+def test_payload_has_community_overlay_shape(two_runs):
+    obj = json.loads(two_runs[0])
+    assert "community" in obj, "missing top-level community overlay"
+    c = obj["community"]
+    for k in ("reports", "summary", "ledger_path", "note"):
+        assert k in c, f"community missing {k}"
+    s = c["summary"]
+    for k in ("n_reports", "n_verified", "n_pending", "n_unmapped",
+              "n_poles_corroborated", "by_severity"):
+        assert k in s, f"community.summary missing {k}"
+
+    reports = c["reports"]
+    # only verified/pending survive ingest; rejected dropped entirely
+    assert reports, "expected ingested community reports"
+    for r in reports:
+        assert r["status"] in ("verified", "pending"), (
+            "rejected row leaked into the overlay")
+        for k in ("report_id", "pole_id", "lat", "lon", "county",
+                  "conditions", "severity", "note", "reporter",
+                  "submitted", "status", "source"):
+            assert k in r, f"normalized report missing {k}"
+    # deterministic ordering: sorted by report_id
+    ids = [r["report_id"] for r in reports]
+    assert ids == sorted(ids), "community reports must be report_id-sorted"
+    assert s["n_reports"] == len(reports)
+    assert s["n_verified"] == sum(
+        1 for r in reports if r["status"] == "verified")
+
+    # cross-check the file: every rejected row in the ledger is absent
+    rej = set()
+    with open(LEDGER, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            row = json.loads(line)
+            if row["status"] == "rejected":
+                rej.add(row["report_id"])
+    assert rej, "test fixture expects a rejected row in the ledger"
+    assert not (rej & set(ids)), "a rejected report_id leaked into payload"
+
+
+def test_corroborated_pole_exposes_community_fields(two_runs):
+    obj = json.loads(two_runs[0])
+    poles = obj["poles"]
+    # every pole carries the overlay fields (added keys; required keys above
+    # are still all asserted by test_app_data_shape_and_keys)
+    for p in poles:
+        assert "community_n" in p and "community_status" in p
+        assert isinstance(p["community_n"], int) and p["community_n"] >= 0
+        assert p["community_status"] in ("corroborated", "reported", "none")
+    corr = [p for p in poles if p["community_n"] > 0]
+    assert corr, "expected at least one pole with a community report"
+    # a verified report => 'corroborated'; pole_id must match a real pole
+    ver_ids = {r["pole_id"] for r in obj["community"]["reports"]
+               if r["status"] == "verified" and r["pole_id"] is not None}
+    assert ver_ids, "fixture expects >=1 verified mapped report"
+    by_id = {p["id"]: p for p in poles}
+    for pid in ver_ids:
+        assert pid in by_id, f"verified report references unknown pole {pid}"
+        assert by_id[pid]["community_n"] >= 1
+        assert by_id[pid]["community_status"] == "corroborated"
+
+
+def test_overlay_does_not_change_model_output():
+    """Hard invariant: the overlay is reconciliation only. risk / tier /
+    drivers / action / ordering / kpis / segments must be byte-identical
+    whether or not the ledger is present."""
+    import vista.app_export as ae
+    from vista.data_gen import generate_fleet
+    from vista.impact import economic_impact
+    from vista.model import fit, split_indices
+    from vista.validation import run_validation
+    from vista.config import TEST_FRACTION, VAL_FRACTION
+
+    fd = generate_fleet()
+    tr, va, te = split_indices(len(fd.y), fd.y, TEST_FRACTION, VAL_FRACTION)
+    fr = fit(fd.X, fd.y, fd.feature_names, tr, va, te)
+    vr = run_validation(fd, fr)
+    econ = economic_impact(fr, fd)
+
+    p_with = ae._build_payload(fd, fr, vr, econ)
+    orig = ae._load_community_reports
+    try:
+        ae._load_community_reports = lambda path=ae.COMMUNITY_LEDGER_PATH: []
+        p_without = ae._build_payload(fd, fr, vr, econ)
+    finally:
+        ae._load_community_reports = orig
+
+    def core(pl):
+        return [(x["id"], x["risk"], x["tier"], x["action"], x["segment"],
+                 tuple(tuple(d) for d in x["drivers"])) for x in pl["poles"]]
+
+    assert core(p_with) == core(p_without), (
+        "community overlay altered model risk/tier/drivers/order")
+    assert p_with["kpis"] == p_without["kpis"]
+    assert p_with["segments"] == p_without["segments"]
+    # empty/missing ledger degrades gracefully
+    assert p_without["community"]["summary"]["n_reports"] == 0
+    assert all(x["community_n"] == 0 for x in p_without["poles"])
+
+
+def test_report_mode_dom_ids_present(two_runs):
+    html = two_runs[2]
+    for el_id in ("reportToggle", "reportForm", "reportPoleId",
+                  "reportConds", "reportSev", "reportNote",
+                  "reportReporter", "reportSubmit", "reportDownload",
+                  "reportClear", "reportMsg", "fieldReportsToggle",
+                  "mapwrap", "commStat", "reportLoc", "reportCap",
+                  "reportFlow"):
+        assert ('id="%s"' % el_id) in html, (
+            f"missing report-mode #{el_id} in app shell")
+    # the client-side ledger-schema export is wired
+    assert "vista_community_reports.jsonl" in html
+    # the moderated-flow plain-text panel + ledger path are present, with
+    # NO clickable URL (the offline/self-contained test still enforces this)
+    assert "community_reports/ledger.jsonl" in html
+    assert "pull request" in html.lower()
+
+
+def test_offline_self_contained_still_holds_with_overlay(two_runs):
+    """Re-assert the offline guarantee now that the overlay UI/data exist:
+    no new external refs or banned tokens were introduced."""
+    html = two_runs[2]
+    assert "fetch(" not in html and "XMLHttpRequest" not in html
+    for tok in ("http://", "https://"):
+        for m in re.finditer(re.escape(tok), html):
+            ctx = html[max(0, m.start() - 60):m.start() + 40]
+            assert "w3.org" in ctx, f"unexpected external URL: ...{ctx}..."
+    for term in ("googleapis", "cdn.", "unpkg", "jsdelivr", "cloudflare",
+                 "tile.openstreetmap", "mapbox", ".woff", "fonts.g"):
+        assert term not in html, f"external dependency token: {term}"
+    # the exact embed contract is intact
+    assert '<script id="vista-data" type="application/json">' in html
+    assert "__VISTA_DATA__" not in html

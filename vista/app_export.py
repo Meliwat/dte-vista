@@ -72,12 +72,160 @@ def _action_for_driver(driver_name: str) -> str:
     return "INSPECT"
 
 
+# --------------------------------------------------------------------------
+# Citizen-corroboration overlay.
+#
+# The moderated, repo-committed ledger at community_reports/ledger.jsonl is
+# read here and folded into the payload as an OVERLAY ONLY. It is reconciled
+# against the model output as a priority / corroboration signal; it MUST NOT
+# influence predict_proba, the model, drivers, tiers, or risk ordering, and it
+# is never model training input. Ingestion is fully deterministic (a fixed
+# committed file, normalized, sorted by report_id) so two pipeline runs over
+# the same ledger produce a byte-identical app_data.json. No clock, no RNG,
+# no env, no network — consistent with the rest of VISTA.
+# --------------------------------------------------------------------------
+
+# repo-root/community_reports/ledger.jsonl (this file lives in repo-root/vista)
+COMMUNITY_LEDGER_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "community_reports", "ledger.jsonl")
+
+# Statuses the pipeline ingests; "rejected" rows are dropped entirely.
+_INGEST_STATUSES = ("verified", "pending")
+_VALID_SEVERITY = ("low", "medium", "urgent")
+_VALID_SOURCE = ("resident", "lineman", "sample")
+
+
+def _norm_report(rec: dict) -> dict | None:
+    """Normalize one raw ledger record into a fixed, deterministic shape.
+
+    Returns None if the record is unusable or not in an ingestible status
+    (so callers can simply skip falsy results). Pure: no clock/RNG/I/O.
+    """
+    if not isinstance(rec, dict):
+        return None
+    status = str(rec.get("status", "")).strip().lower()
+    if status not in _INGEST_STATUSES:
+        return None
+    rid = rec.get("report_id")
+    if rid is None or str(rid).strip() == "":
+        return None
+    pid = rec.get("pole_id")
+    pole_id = None if pid is None else str(pid)
+    try:
+        lat = round(float(rec.get("lat")), 6)
+        lon = round(float(rec.get("lon")), 6)
+    except (TypeError, ValueError):
+        return None
+    conds = rec.get("conditions") or []
+    if not isinstance(conds, list):
+        conds = [str(conds)]
+    conditions = [str(c) for c in conds]
+    severity = str(rec.get("severity", "")).strip().lower()
+    if severity not in _VALID_SEVERITY:
+        severity = "medium"
+    source = str(rec.get("source", "")).strip().lower()
+    if source not in _VALID_SOURCE:
+        source = "resident"
+    return {
+        "report_id": str(rid),
+        "pole_id": pole_id,
+        "lat": lat,
+        "lon": lon,
+        "county": str(rec.get("county", "")),
+        "conditions": conditions,
+        "severity": severity,
+        "note": str(rec.get("note", "")),
+        "reporter": str(rec.get("reporter", "")),
+        "submitted": str(rec.get("submitted", "")),
+        "status": status,
+        "source": source,
+    }
+
+
+def _load_community_reports(path: str = COMMUNITY_LEDGER_PATH) -> List[dict]:
+    """Read the moderated JSON-Lines ledger deterministically.
+
+    Missing file -> empty list (never crash). Malformed lines are skipped.
+    Only verified/pending rows survive; rejected rows are dropped. The result
+    is sorted by report_id so the payload is byte-identical across runs.
+    """
+    reports: List[dict] = []
+    if not os.path.isfile(path):
+        return reports
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            raw_lines = fh.read().splitlines()
+    except OSError:
+        return reports
+    for line in raw_lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            rec = json.loads(line)
+        except (ValueError, TypeError):
+            continue
+        norm = _norm_report(rec)
+        if norm is not None:
+            reports.append(norm)
+    reports.sort(key=lambda r: r["report_id"])
+    return reports
+
+
+def _community_overlay(reports: List[dict]) -> dict:
+    """Build the deterministic top-level community overlay block.
+
+    Pure summary over the already-normalized, already-sorted reports. This is
+    an OVERLAY: it carries corroboration/priority metadata only and never
+    feeds the model.
+    """
+    n = len(reports)
+    n_verified = sum(1 for r in reports if r["status"] == "verified")
+    n_pending = sum(1 for r in reports if r["status"] == "pending")
+    n_unmapped = sum(1 for r in reports if r["pole_id"] is None)
+    # poles corroborated = distinct pole_ids with >=1 VERIFIED report
+    corroborated = sorted({
+        r["pole_id"] for r in reports
+        if r["pole_id"] is not None and r["status"] == "verified"})
+    by_sev = {s: sum(1 for r in reports if r["severity"] == s)
+              for s in _VALID_SEVERITY}
+    return {
+        "reports": reports,  # already sorted by report_id
+        "summary": {
+            "n_reports": n,
+            "n_verified": n_verified,
+            "n_pending": n_pending,
+            "n_unmapped": n_unmapped,
+            "n_poles_corroborated": len(corroborated),
+            "by_severity": by_sev,
+        },
+        "ledger_path": "community_reports/ledger.jsonl",
+        "note": ("Citizen-corroboration overlay. Moderated, repo-committed "
+                 "field reports reconciled against the model as a "
+                 "priority/corroboration signal — never model input."),
+    }
+
+
 def _build_payload(fd: FleetData, fr: FitResult, vr: ValidationReport,
                     econ: dict) -> dict:
     """Assemble the deterministic data dict embedded in the app."""
     proba = predict_proba(fr, fd.X)
     seg = segment_risk(np.asarray(fd.segment_id), proba)
     stations = load_noaa_normals()
+
+    # Citizen-corroboration overlay (read-only, deterministic, NOT model input)
+    community_reports = _load_community_reports()
+    # per-pole corroboration index: pole_id -> (n_total, has_verified)
+    _comm_idx: Dict[str, list] = {}
+    for r in community_reports:
+        pid = r["pole_id"]
+        if pid is None:
+            continue
+        slot = _comm_idx.setdefault(pid, [0, False])
+        slot[0] += 1
+        if r["status"] == "verified":
+            slot[1] = True
 
     # poles, sorted by risk desc (stable tie-break by index → deterministic)
     order = np.argsort(-proba, kind="stable")
@@ -87,8 +235,10 @@ def _build_payload(fd: FleetData, fr: FitResult, vr: ValidationReport,
         drv = explain_pole(fr, fd.X[j], top_k=5)
         drivers = [[str(name), round(float(c), 4)] for name, c in drv]
         top_driver = drivers[0][0] if drivers else ""
+        pid = str(fd.pole_id[j])
+        c_n, c_ver = _comm_idx.get(pid, (0, False))
         poles.append({
-            "id": str(fd.pole_id[j]),
+            "id": pid,
             "lat": round(float(fd.lat[j]), 6),
             "lon": round(float(fd.lon[j]), 6),
             "county": str(fd.county[j]),
@@ -97,6 +247,10 @@ def _build_payload(fd: FleetData, fr: FitResult, vr: ValidationReport,
             "tier": _tier(float(proba[j])),
             "drivers": drivers,
             "action": _action_for_driver(top_driver),
+            # Citizen-corroboration overlay (NOT a model input / not in risk).
+            "community_n": int(c_n),
+            "community_status": "corroborated" if c_ver else (
+                "reported" if c_n else "none"),
         })
 
     segments = [
@@ -175,6 +329,10 @@ def _build_payload(fd: FleetData, fr: FitResult, vr: ValidationReport,
         },
         "poles": poles,
         "segments": segments,
+        # Citizen-corroboration overlay — deterministic, sorted by report_id,
+        # reconciled against the model as a priority/corroboration signal.
+        # NOT model input; does not affect risk, tiers, drivers or ordering.
+        "community": _community_overlay(community_reports),
     }
     return payload
 
@@ -433,9 +591,115 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   footer.app{padding:14px 26px;border-top:1px solid var(--line);
     color:var(--mute);font-size:10.5px;line-height:1.7;letter-spacing:.4px;}
   footer.app b{color:var(--dim);}
+  /* ---- citizen-corroboration channel (cyan instrument sub-panel) ---- */
+  .fieldhdr .tools{display:flex;align-items:center;gap:9px;}
+  button.rtoggle{background:var(--panel);color:var(--cool);
+    border:1px solid #1d3b44;font-size:9.5px;font-weight:800;
+    letter-spacing:1.5px;padding:6px 11px;cursor:pointer;
+    text-transform:uppercase;transition:all .14s;
+    clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);}
+  button.rtoggle:hover{border-color:var(--cool);background:#08151a;}
+  button.rtoggle.on{background:linear-gradient(95deg,var(--cool),#15a9c4);
+    color:var(--void);border-color:var(--cool);
+    box-shadow:0 0 14px rgba(54,224,255,.4);}
+  .mapwrap.reporting{outline:1px dashed rgba(54,224,255,.5);
+    outline-offset:3px;cursor:crosshair;}
+  .mapwrap.reporting svg.map{cursor:crosshair;}
+  .reportbox{margin-top:14px;border:1px solid #1d3b44;background:var(--void2);
+    position:relative;display:none;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),
+      calc(100% - 10px) 100%,0 100%);}
+  .reportbox.show{display:block;animation:rise .4s ease-out both;}
+  .reportbox .rhdr{display:flex;justify-content:space-between;
+    align-items:center;padding:11px 15px;border-bottom:1px solid #14242b;
+    background:linear-gradient(180deg,#08161b,#060b0e);}
+  .reportbox .rhdr strong{font-size:10.5px;letter-spacing:2.5px;
+    text-transform:uppercase;color:var(--cool);}
+  .reportbox .rhdr .rx{color:var(--mute);font-size:9.5px;letter-spacing:1px;
+    font-family:ui-monospace,Menlo,monospace;}
+  .rgrid{padding:15px;display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;}
+  .rgrid .full{grid-column:1/3;}
+  .rlab{font-size:9px;text-transform:uppercase;letter-spacing:2px;
+    color:var(--mute);margin-bottom:7px;display:block;}
+  .rconds{display:flex;flex-wrap:wrap;gap:7px;}
+  .rcond{font-size:10.5px;letter-spacing:.5px;padding:6px 10px;
+    border:1px solid var(--line2);background:var(--panel);cursor:pointer;
+    user-select:none;color:var(--dim);transition:all .12s;
+    display:flex;align-items:center;gap:7px;}
+  .rcond input{accent-color:var(--cool);margin:0;cursor:pointer;}
+  .rcond.on{border-color:var(--cool);color:var(--ink);background:#08151a;}
+  .reportbox input[type=text],.reportbox textarea,.reportbox select{
+    width:100%;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line2);padding:8px 10px;font-size:12px;
+    letter-spacing:.4px;font-family:inherit;}
+  .reportbox textarea{resize:vertical;min-height:52px;}
+  .reportbox input[type=text]:focus,.reportbox textarea:focus,
+  .reportbox select:focus{outline:1px solid var(--cool);}
+  .sevseg{display:flex;gap:0;border:1px solid var(--line2);}
+  .sevseg button{flex:1;background:var(--panel);color:var(--dim);
+    border:none;border-right:1px solid var(--line2);padding:8px 0;
+    font-size:10.5px;font-weight:700;letter-spacing:1px;cursor:pointer;
+    text-transform:uppercase;transition:all .12s;}
+  .sevseg button:last-child{border-right:none;}
+  .sevseg button.on{background:var(--cool);color:var(--void);}
+  .rcap{font-size:10.5px;color:var(--cool);letter-spacing:.5px;
+    font-family:ui-monospace,Menlo,monospace;}
+  .rcap .un{color:var(--mute);}
+  .ractions{display:flex;gap:10px;align-items:center;
+    padding:13px 15px;border-top:1px solid #14242b;flex-wrap:wrap;}
+  button.rsub{background:linear-gradient(95deg,var(--cool),#15a9c4);
+    color:var(--void);border:none;padding:9px 16px;font-size:11px;
+    font-weight:800;cursor:pointer;letter-spacing:1.5px;
+    box-shadow:0 0 14px rgba(54,224,255,.3);
+    clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);}
+  button.rsub:hover{filter:brightness(1.12);}
+  button.rghost{background:var(--panel);color:var(--dim);
+    border:1px solid var(--line2);padding:9px 14px;font-size:10.5px;
+    font-weight:700;cursor:pointer;letter-spacing:1px;
+    text-transform:uppercase;}
+  button.rghost:hover{border-color:var(--cool);color:var(--cool);}
+  .rmsg{font-size:10.5px;letter-spacing:.5px;color:var(--cool);
+    margin-left:auto;font-family:ui-monospace,Menlo,monospace;min-height:13px;}
+  .rnote{padding:11px 15px;border-top:1px solid #14242b;
+    font-size:10px;line-height:1.7;color:var(--mute);letter-spacing:.3px;
+    background:#060b0e;}
+  .rnote b{color:var(--dim);}
+  .rnote code{font-family:ui-monospace,Menlo,monospace;color:var(--cool);
+    background:#0a1417;padding:1px 5px;}
+  /* dossier field-reports block */
+  .freports{margin-top:22px;border:1px solid #1d3b44;
+    background:linear-gradient(135deg,#08161b,#0a0d12);padding:16px;
+    position:relative;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 11px),
+      calc(100% - 11px) 100%,0 100%);}
+  .freports .lab{font-size:9.5px;text-transform:uppercase;letter-spacing:3px;
+    color:var(--cool);}
+  .freports .agree{font-size:12px;color:var(--ink);margin:9px 0 14px;
+    line-height:1.6;letter-spacing:.3px;}
+  .freports .agree b{color:var(--cool);}
+  .freports .agree.un b{color:var(--mute);}
+  .frow{border-top:1px solid #14242b;padding:10px 0 2px;font-size:11.5px;
+    line-height:1.6;}
+  .frow:first-of-type{border-top:none;}
+  .frow .ft{display:flex;align-items:center;gap:9px;margin-bottom:4px;
+    flex-wrap:wrap;}
+  .fsev{font-size:9px;font-weight:800;padding:2px 8px;letter-spacing:1px;
+    color:var(--void);clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,
+      0 100%);}
+  .fsrc{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--mute);font-family:ui-monospace,Menlo,monospace;}
+  .fst{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
+    font-family:ui-monospace,Menlo,monospace;}
+  .fst.v{color:var(--cool);} .fst.p{color:var(--elev);}
+  .frow .fc{color:#b9c7d8;} .frow .fn{color:var(--mute);font-size:11px;
+    margin-top:3px;font-style:italic;}
+  .legend i.diamond{border-radius:0;transform:rotate(45deg);
+    width:9px;height:9px;background:none;border:1.5px solid var(--cool);
+    box-shadow:none;}
   @media (max-width:1140px){.layout{grid-template-columns:1fr;}
     .panel,.panel.right{border:none;border-bottom:1px solid var(--line);
-      max-height:none;}}
+      max-height:none;}
+    .rgrid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -481,10 +745,18 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   </aside>
 
   <main class="center">
-    <div class="mapwrap">
+    <div class="mapwrap" id="mapwrap">
       <div class="fieldhdr">
         <span>FIG · DTE SE-MICHIGAN TERRITORY — POLE RISK FIELD</span>
-        <span class="rt mono">WGS84 · LIVE</span>
+        <span class="tools">
+          <button class="rtoggle on" id="fieldReportsToggle"
+            title="Show/hide moderated field-report markers">&#9826; FIELD
+            REPORTS</button>
+          <button class="rtoggle" id="reportToggle"
+            title="Enter report mode, then click the map or a node">&#xFF0B;
+            REPORT A POLE</button>
+          <span class="rt mono">WGS84 · LIVE</span>
+        </span>
       </div>
       <svg class="map" id="map" viewBox="0 0 1000 612"
            preserveAspectRatio="xMidYMid meet"></svg>
@@ -497,6 +769,66 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
           box-shadow:none"></i>NOAA station</span>
         <span><i style="background:none;border:1px solid #fff;box-shadow:none;
           border-radius:0"></i>Priority (within budget)</span>
+        <span><i class="diamond" style="color:#36e0ff"></i>Field reports
+          (moderated / yours)</span>
+      </div>
+
+      <div class="reportbox" id="reportForm">
+        <div class="rhdr">
+          <strong>&#xFF0B; Report a pole — community field report</strong>
+          <span class="rx" id="reportCap">No location — click the map or a
+            node</span>
+        </div>
+        <div class="rgrid">
+          <div>
+            <span class="rlab">Location</span>
+            <div class="rcap" id="reportLoc"><span class="un">awaiting map
+              click…</span></div>
+          </div>
+          <div>
+            <span class="rlab">Pole ID (auto / manual)</span>
+            <input type="text" id="reportPoleId" placeholder="e.g. P00123 or
+              blank if unmapped" autocomplete="off">
+          </div>
+          <div class="full">
+            <span class="rlab">Observed conditions</span>
+            <div class="rconds" id="reportConds"></div>
+          </div>
+          <div>
+            <span class="rlab">Severity</span>
+            <div class="sevseg" id="reportSev">
+              <button type="button" data-s="low">Low</button>
+              <button type="button" data-s="medium" class="on">Medium</button>
+              <button type="button" data-s="urgent">Urgent</button>
+            </div>
+          </div>
+          <div>
+            <span class="rlab">Reporter handle (optional, no PII)</span>
+            <input type="text" id="reportReporter" placeholder="optional"
+              autocomplete="off" maxlength="40">
+          </div>
+          <div class="full">
+            <span class="rlab">Short note</span>
+            <textarea id="reportNote" maxlength="280"
+              placeholder="What did you observe? (no personal info)"></textarea>
+          </div>
+        </div>
+        <div class="ractions">
+          <button class="rsub" id="reportSubmit">&#9826; SUBMIT REPORT</button>
+          <button class="rghost" id="reportDownload">&#x2913; Download
+            community reports (.jsonl)</button>
+          <button class="rghost" id="reportClear">Clear my reports</button>
+          <span class="rmsg" id="reportMsg"></span>
+        </div>
+        <div class="rnote" id="reportFlow">
+          <b>Moderated flow.</b> Submitting stores the report locally in this
+          browser only and draws it as a cyan diamond on the field. Use
+          <b>Download community reports (.jsonl)</b>, then submit the
+          downloaded file as a pull request adding lines to
+          <code>community_reports/ledger.jsonl</code>; a maintainer
+          reviews/verifies before it appears as corroboration. Reports are a
+          corroboration/priority overlay — never model training input.
+        </div>
       </div>
     </div>
 
@@ -531,7 +863,8 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   </aside>
 </div>
 
-<footer class="app" id="footer"></footer>
+<footer class="app" id="footer"><span id="footerProv"></span>
+  <span id="commStat"></span></footer>
 <div id="tooltip"></div>
 
 <script id="vista-data" type="application/json">__VISTA_DATA__</script>
@@ -540,14 +873,31 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
 (function(){
   var D = JSON.parse(document.getElementById("vista-data").textContent);
   var M = D.meta, K = D.kpis, POLES = D.poles;
+  // Citizen-corroboration overlay (read-only; never a model input).
+  var COMM = D.community || {reports:[],summary:{n_reports:0,
+    n_poles_corroborated:0,n_verified:0,n_pending:0}};
+  var COMM_REPORTS = COMM.reports || [];
+  var COMM_SUM = COMM.summary || {};
+  // ingested reports indexed by pole id (for the dossier block)
+  var COMM_BY_POLE = {};
+  COMM_REPORTS.forEach(function(r){
+    if(r.pole_id==null) return;
+    (COMM_BY_POLE[r.pole_id]=COMM_BY_POLE[r.pole_id]||[]).push(r); });
+  var CY = "#36e0ff";
   var TIER_COLOR = {CRITICAL:"#ff394e",HIGH:"#ff8f1f",
                     ELEVATED:"#ffd23f",ROUTINE:"#1fd98c"};
   var TIERS = ["CRITICAL","HIGH","ELEVATED","ROUTINE"];
+  var CONDITIONS = ["Leaning pole","Vegetation contact",
+    "Damaged hardware/crossarm","Low/down wire","Cracked/rotted pole",
+    "Other"];
+  var LS_KEY = "vista_community_reports";
 
   var state = {
     tiers:{CRITICAL:true,HIGH:true,ELEVATED:true,ROUTINE:true},
     county:"ALL", minRisk:0, budget:20,
-    sortKey:"risk", sortDir:-1, selected:null
+    sortKey:"risk", sortDir:-1, selected:null,
+    reporting:false, showFieldReports:true,
+    rLoc:null, rConds:{}, rSev:"medium"
   };
 
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
@@ -557,13 +907,13 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   function usd(x){ return "$"+Math.round(x).toLocaleString("en-US"); }
 
   document.getElementById("subtitle").textContent = M.subtitle;
-  document.getElementById("footer").innerHTML =
+  document.getElementById("footerProv").innerHTML =
     "<b>Provenance.</b> Synthetic DTE-style fleet anchored to REAL NOAA "+
     "1991–2020 climate normals ("+M.noaa_stations.length+" stations) + "+
     "image-derived NDVI / structure features. Deterministic, offline, no "+
     "proprietary inputs. Generated "+esc(M.generated)+" · "+
     M.n_poles.toLocaleString()+" poles · tiers CRITICAL&ge;0.65 / "+
-    "HIGH&ge;0.40 / ELEVATED&ge;0.22.";
+    "HIGH&ge;0.40 / ELEVATED&ge;0.22.<br>";
 
   // ---- KPI telemetry rail ----
   var inc=K.incumbent, abl=K.ablation, ec=K.economics;
@@ -746,6 +1096,8 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
         points:(x)+","+(y-6)+" "+(x+5.5)+","+(y+4.5)+" "+(x-5.5)+","+(y+4.5),
         fill:"none",stroke:"#36e0ff","stroke-width":1.2}));
     });
+    // citizen-corroboration overlay markers (moderated ledger + my local)
+    drawCommunity();
     // one-time power-on energize sweep
     var sweep=el("rect",{x:PADX,y:PADY,width:3,height:IH,
       fill:"#ffb01f","fill-opacity":0.55});
@@ -791,9 +1143,54 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
       'SEGMENT <b>'+esc(p.segment)+'</b><br>POSITION <b>'+p.lat.toFixed(4)+
       ', '+p.lon.toFixed(4)+'</b> (WGS84)</div>'+
       '<div class="ttl">Why this pole is flagged</div>'+drvHtml+
+      fieldReportsBlock(p)+
       '<div class="callout"><div class="lab">Recommended directive</div>'+
       '<div class="act">&#9656; '+esc(p.action)+'</div></div>';
     drawMap(); drawTable();
+  }
+
+  // dossier FIELD REPORTS block — reconciles the model output against the
+  // citizen-corroboration overlay (ingested moderated ledger + my local).
+  // Pure presentation; does NOT alter risk/tier/drivers.
+  function fieldReportsBlock(p){
+    var ing = COMM_BY_POLE[p.id] || [];
+    var mine = loadMine().filter(function(r){ return r.pole_id===p.id; });
+    var all = ing.concat(mine);
+    if(!all.length) return "";
+    var nVer = ing.filter(function(r){ return r.status==="verified"; })
+      .length;
+    var mt = p.tier;  // model verdict label (unchanged by the overlay)
+    var agree, un=false;
+    if(nVer>0){
+      agree = "Model: <b>"+mt+"</b> &mdash; corroborated by <b>"+
+        nVer+"</b> verified field report"+(nVer===1?"":"s");
+    } else if(ing.length>0){
+      un=true;
+      agree = "Model: <b>"+mt+"</b> &mdash; <b>"+ing.length+
+        "</b> pending field report"+(ing.length===1?"":"s")+
+        " (awaiting moderation, not yet corroboration)";
+    } else {
+      un=true;
+      agree = "Model: <b>"+mt+"</b> &mdash; <b>uncorroborated</b> "+
+        "(local report only, not submitted)";
+    }
+    var rows = all.map(function(r){
+      var local = mine.indexOf(r)>=0;
+      var sv = r.severity||"medium";
+      var sc = sv==="urgent"?"#ff394e":sv==="medium"?"#ffd23f":"#1fd98c";
+      var stCls = r.status==="verified"?"v":"p";
+      var stTx = local? "LOCAL/PENDING" : r.status.toUpperCase();
+      return '<div class="frow"><div class="ft">'+
+        '<span class="fsev" style="background:'+sc+'">'+esc(sv)+
+        '</span>'+
+        '<span class="fst '+stCls+'">'+esc(stTx)+'</span>'+
+        '<span class="fsrc">'+esc(r.source||"resident")+'</span></div>'+
+        '<div class="fc">'+esc((r.conditions||[]).join(" · "))+'</div>'+
+        (r.note? '<div class="fn">"'+esc(r.note)+'"</div>':"")+'</div>';
+    }).join("");
+    return '<div class="freports"><div class="lab">&#9826; FIELD REPORTS ('+
+      all.length+')</div>'+
+      '<div class="agree'+(un?" un":"")+'">'+agree+'</div>'+rows+'</div>';
   }
 
   // ---- worklist ----
@@ -884,7 +1281,280 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
     document.body.removeChild(a); URL.revokeObjectURL(url);
   });
 
-  function render(){ drawMap(); drawTable(); drawCoverage(); }
+  // ====================================================================
+  // CITIZEN-CORROBORATION CHANNEL — in-app report mode (offline, vanilla).
+  // Reports live in localStorage only; export emits the exact ledger
+  // schema for the moderated GitHub PR flow. This is an overlay /
+  // corroboration signal — it never touches the model or risk.
+  // ====================================================================
+
+  // inverse of projX/projY: SVG client point -> WGS84 lon/lat
+  function invProj(px, py){
+    var lon = BB.lon_min + (px-PADX)/IW*(BB.lon_max-BB.lon_min);
+    var lat = BB.lat_min + (1-(py-PADY)/IH)*(BB.lat_max-BB.lat_min);
+    return {lat:lat, lon:lon};
+  }
+  // nearest county by the SAME longitude banding the fleet uses
+  function countyForLon(lon){
+    var nC=M.counties.length;
+    var f=(lon-BB.lon_min)/(BB.lon_max-BB.lon_min);
+    var i=Math.floor(f*nC); if(i<0) i=0; if(i>nC-1) i=nC-1;
+    return M.counties[i];
+  }
+  function svgPointFromEvent(e){
+    var pt=svg.createSVGPoint();
+    pt.x=e.clientX; pt.y=e.clientY;
+    var m=svg.getScreenCTM();
+    if(!m) return null;
+    var p=pt.matrixTransform(m.inverse());
+    return {x:p.x, y:p.y};
+  }
+  function nearestPole(lon, lat){
+    var best=null, bd=1e9;
+    for(var i=0;i<POLES.length;i++){
+      var p=POLES[i];
+      var dx=p.lon-lon, dy=p.lat-lat, d=dx*dx+dy*dy;
+      if(d<bd){ bd=d; best=p; }
+    }
+    return {pole:best, d:Math.sqrt(bd)};
+  }
+
+  function loadMine(){
+    try{ var v=JSON.parse(localStorage.getItem(LS_KEY)||"[]");
+      return Array.isArray(v)?v:[]; }catch(e){ return []; }
+  }
+  function saveMine(a){
+    try{ localStorage.setItem(LS_KEY,JSON.stringify(a)); }catch(e){}
+  }
+  function nextReportId(mine){
+    // deterministic local id space, distinct from committed CR-* ledger ids
+    var mx=0;
+    mine.forEach(function(r){
+      var m=/^LOCAL-(\d+)$/.exec(r.report_id||"");
+      if(m){ var n=+m[1]; if(n>mx) mx=n; }
+    });
+    var s=String(mx+1); while(s.length<4) s="0"+s;
+    return "LOCAL-"+s;
+  }
+
+  // condition checkboxes
+  var rConds=document.getElementById("reportConds");
+  rConds.innerHTML=CONDITIONS.map(function(c,i){
+    return '<label class="rcond" data-c="'+esc(c)+'">'+
+      '<input type="checkbox" data-ci="'+i+'">'+esc(c)+'</label>';
+  }).join("");
+  Array.prototype.forEach.call(rConds.querySelectorAll(".rcond"),
+    function(lb){
+      var cb=lb.querySelector("input");
+      lb.addEventListener("click",function(e){
+        if(e.target!==cb){ cb.checked=!cb.checked; }
+        state.rConds[lb.getAttribute("data-c")]=cb.checked;
+        lb.classList.toggle("on",cb.checked);
+      });
+    });
+
+  // severity segmented control
+  var rSev=document.getElementById("reportSev");
+  Array.prototype.forEach.call(rSev.querySelectorAll("button"),
+    function(b){
+      b.addEventListener("click",function(){
+        state.rSev=b.getAttribute("data-s");
+        Array.prototype.forEach.call(rSev.querySelectorAll("button"),
+          function(x){ x.classList.toggle("on",x===b); });
+      });
+    });
+
+  function setReportLoc(loc, poleId, county){
+    state.rLoc={lat:loc.lat, lon:loc.lon,
+      county:county||countyForLon(loc.lon)};
+    document.getElementById("reportLoc").innerHTML=
+      loc.lat.toFixed(5)+", "+loc.lon.toFixed(5)+
+      " &middot; <span style=\"color:var(--dim)\">"+
+      esc(state.rLoc.county)+"</span>";
+    document.getElementById("reportCap").textContent=
+      poleId? ("Pole "+poleId+" prefilled") : "Location captured";
+    if(poleId!=null){
+      document.getElementById("reportPoleId").value=poleId;
+    }
+    drawMap();
+  }
+
+  function rMsg(t,bad){
+    var m=document.getElementById("reportMsg");
+    m.textContent=t||"";
+    m.style.color=bad?"#ff8f1f":CY;
+  }
+
+  // toggle report mode
+  var rToggle=document.getElementById("reportToggle");
+  var rForm=document.getElementById("reportForm");
+  var mapWrap=document.getElementById("mapwrap");
+  rToggle.addEventListener("click",function(){
+    state.reporting=!state.reporting;
+    rToggle.classList.toggle("on",state.reporting);
+    rForm.classList.toggle("show",state.reporting);
+    mapWrap.classList.toggle("reporting",state.reporting);
+    rMsg(state.reporting?
+      "Report mode ON — click the field or a node to set a location":"");
+  });
+  // field-report marker visibility toggle
+  var frToggle=document.getElementById("fieldReportsToggle");
+  frToggle.addEventListener("click",function(){
+    state.showFieldReports=!state.showFieldReports;
+    frToggle.classList.toggle("on",state.showFieldReports);
+    drawMap();
+  });
+
+  // map click while reporting -> capture location (svg-level handler so
+  // empty field clicks also work; node clicks prefill via select()).
+  svg.addEventListener("click",function(e){
+    if(!state.reporting) return;
+    var sp=svgPointFromEvent(e);
+    if(!sp) return;
+    var ll=invProj(sp.x, sp.y);
+    if(ll.lon<BB.lon_min||ll.lon>BB.lon_max||
+       ll.lat<BB.lat_min||ll.lat>BB.lat_max) return;
+    var np=nearestPole(ll.lon, ll.lat);
+    // snap to a node if the click landed essentially on it
+    if(np.pole && np.d<0.012){
+      setReportLoc({lat:np.pole.lat,lon:np.pole.lon}, np.pole.id,
+        np.pole.county);
+    } else {
+      setReportLoc(ll, "", countyForLon(ll.lon));
+    }
+  },true);
+
+  // submit -> append to localStorage, redraw
+  document.getElementById("reportSubmit").addEventListener("click",
+    function(){
+      var pid=document.getElementById("reportPoleId").value.trim();
+      var loc=state.rLoc;
+      if(!loc && pid){
+        // manual pole id with no map click: borrow that pole's location
+        for(var i=0;i<POLES.length;i++) if(POLES[i].id===pid){
+          loc={lat:POLES[i].lat,lon:POLES[i].lon,county:POLES[i].county};
+          break; }
+      }
+      if(!loc){ rMsg("Set a location: click the map/a node, or enter a "+
+        "known pole id",true); return; }
+      var conds=CONDITIONS.filter(function(c){ return state.rConds[c]; });
+      if(!conds.length){ rMsg("Select at least one condition",true);
+        return; }
+      var mine=loadMine();
+      var rec={
+        report_id: nextReportId(mine),
+        pole_id: pid? pid : null,
+        lat: Math.round(loc.lat*1e6)/1e6,
+        lon: Math.round(loc.lon*1e6)/1e6,
+        county: loc.county||countyForLon(loc.lon),
+        conditions: conds,
+        severity: state.rSev,
+        note: document.getElementById("reportNote").value
+          .trim().slice(0,280),
+        reporter: document.getElementById("reportReporter").value
+          .trim().slice(0,40),
+        submitted: D.meta.generated,
+        status: "pending",
+        source: "resident"
+      };
+      mine.push(rec); saveMine(mine);
+      // reset transient inputs
+      document.getElementById("reportNote").value="";
+      state.rConds={};
+      Array.prototype.forEach.call(rConds.querySelectorAll(".rcond"),
+        function(lb){ lb.classList.remove("on");
+          lb.querySelector("input").checked=false; });
+      rMsg("Saved locally as "+rec.report_id+
+        " — download + open a PR to submit");
+      updateCommStat(); drawMap();
+      if(state.selected) select(state.selected);
+    });
+
+  // clear my reports
+  document.getElementById("reportClear").addEventListener("click",
+    function(){
+      var mine=loadMine();
+      if(!mine.length){ rMsg("No local reports to clear"); return; }
+      saveMine([]);
+      rMsg("Cleared "+mine.length+" local report"+
+        (mine.length===1?"":"s"));
+      updateCommStat(); drawMap();
+      if(state.selected) select(state.selected);
+    });
+
+  // download my reports as ledger-schema JSON Lines (client-side Blob)
+  document.getElementById("reportDownload").addEventListener("click",
+    function(){
+      var mine=loadMine();
+      if(!mine.length){ rMsg("No local reports to download",true); return; }
+      var lines=mine.map(function(r){
+        // emit EXACTLY the ledger schema, status pending / source resident
+        return JSON.stringify({
+          report_id:r.report_id, pole_id:r.pole_id==null?null:r.pole_id,
+          lat:r.lat, lon:r.lon, county:r.county,
+          conditions:r.conditions, severity:r.severity, note:r.note,
+          reporter:r.reporter, submitted:r.submitted,
+          status:"pending", source:"resident"
+        });
+      });
+      var blob=new Blob([lines.join("\n")+"\n"],
+        {type:"application/x-ndjson"});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement("a");
+      a.href=url; a.download="vista_community_reports.jsonl";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      rMsg("Downloaded "+mine.length+" report"+
+        (mine.length===1?"":"s")+" — open a PR adding them to the ledger");
+    });
+
+  function updateCommStat(){
+    var mine=loadMine();
+    var base=COMM_SUM.n_reports||0;
+    var bc=COMM_SUM.n_poles_corroborated||0;
+    var elS=document.getElementById("commStat");
+    if(!elS) return;
+    var extra = mine.length? (" + <span style=\"color:"+CY+
+      "\">"+mine.length+" local pending</span>") : "";
+    elS.innerHTML="<b>Community:</b> "+base+" moderated field report"+
+      (base===1?"":"s")+" · "+bc+" pole"+(bc===1?"":"s")+
+      " corroborated"+extra+
+      " &mdash; citizen-corroboration overlay, not a model input.";
+  }
+
+  // draw the community overlay markers (moderated ledger + my local).
+  // Distinct from poles: hollow cyan diamonds; verified = filled core.
+  function drawCommunity(){
+    if(!state.showFieldReports) return;
+    function diamond(lon,lat,filled,title){
+      var x=+projX(lon).toFixed(1), y=+projY(lat).toFixed(1);
+      var g=el("g",{style:"cursor:pointer"});
+      g.appendChild(el("polygon",{
+        points:x+","+(y-6.5)+" "+(x+6.5)+","+y+" "+x+","+(y+6.5)+" "+
+          (x-6.5)+","+y,
+        fill:filled?CY:"none","fill-opacity":filled?0.85:0,
+        stroke:CY,"stroke-width":1.4}));
+      var tEl=el("title",{}); tEl.textContent=title;
+      g.appendChild(tEl);
+      svg.appendChild(g);
+    }
+    COMM_REPORTS.forEach(function(r){
+      diamond(r.lon, r.lat, r.status==="verified",
+        "Field report "+r.report_id+" · "+r.status+" · "+
+        (r.pole_id||"unmapped"));
+    });
+    loadMine().forEach(function(r){
+      var x=+projX(r.lon).toFixed(1), y=+projY(r.lat).toFixed(1);
+      svg.appendChild(el("polygon",{
+        points:x+","+(y-7)+" "+(x+7)+","+y+" "+x+","+(y+7)+" "+
+          (x-7)+","+y,
+        fill:"none",stroke:CY,"stroke-width":1.3,
+        "stroke-dasharray":"3 2"}));
+    });
+  }
+
+  function render(){ drawMap(); drawTable(); drawCoverage();
+    updateCommStat(); }
   document.getElementById("budgetVal").textContent="";
   render();
 })();

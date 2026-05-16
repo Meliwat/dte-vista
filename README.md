@@ -198,7 +198,7 @@ asserts it).
 Tests:
 
 ```bash
-python -m pytest -q     # 47 tests, all green (~3 min; refits real models)
+python -m pytest -q     # 53 tests, all green (~3 min; refits real models)
 ```
 
 ### 2-minute demo script (the exact click-path)
@@ -225,6 +225,103 @@ python -m pytest -q     # 47 tests, all green (~3 min; refits real models)
 6. **(Optional) Filter** to one county / CRITICAL only, then click
    **Export inspection plan (CSV)** — a real file downloads (client-side,
    offline). *"Hand this to the crew tomorrow morning."*
+
+## Community contribution — Michigander field reports
+
+VISTA ships with an optional **citizen-corroboration layer**: a way for
+Michigan residents and line crews to report what they see on a specific pole
+(a lean, a limb on the line, a cracked crossarm), and a **moderated,
+repo-committed ledger** the deterministic pipeline folds in as an **overlay**.
+
+### Report a pole — in the app (offline)
+
+1. Open `output/app.html` (no network, as always).
+2. Click **`＋ Report a pole`** on the field header. The map enters report
+   mode (crosshair cursor).
+3. **Click anywhere on the territory** to capture a WGS84 location (the
+   nearest county is inferred from the same longitude banding the fleet
+   uses), or **click an existing node** to prefill its pole id / county /
+   coordinates. A manual *Pole ID* field is also available.
+4. Tick the observed **conditions** (Leaning pole, Vegetation contact,
+   Damaged hardware/crossarm, Low/down wire, Cracked/rotted pole, Other),
+   pick a **severity** (low / medium / urgent), add a short note, and an
+   optional handle (**no PII required**).
+5. **Submit.** The report is stored in this browser's `localStorage` only
+   and drawn as a **cyan diamond** on the field (it survives reload;
+   *Clear my reports* wipes it). Nothing is sent anywhere.
+
+### The moderated GitHub-ledger flow
+
+Reports do **not** silently enter the system. The flow is deliberately
+human-gated:
+
+1. In the app, click **`⤓ Download community reports (.jsonl)`** — a
+   client-side Blob downloads `vista_community_reports.jsonl` with your
+   reports in the **exact ledger schema**, `status:"pending"`,
+   `source:"resident"`.
+2. Open a **pull request** appending those line(s) to
+   `community_reports/ledger.jsonl` (valid JSON Lines: one object per line).
+3. A **maintainer reviews** each row and flips `status` from `pending` to
+   `verified` (plausible, not abuse) or `rejected` (spam / unsafe /
+   duplicate) — see `community_reports/SCHEMA.md` for the full lifecycle.
+4. On the next pipeline run, `vista/app_export.py` reads the ledger
+   deterministically, **drops `rejected`**, ingests `verified` + `pending`,
+   and folds them into the payload: a top-level `community` block (sorted by
+   `report_id`, plus summary counts) and, per pole, `community_n` /
+   `community_status`. In the dossier, a selected pole with reports shows a
+   **`FIELD REPORTS (N)`** block and a model-agreement line — e.g.
+   *"Model: HIGH — corroborated by 2 verified field reports"* vs.
+   *"uncorroborated"*. The footer carries a
+   *"Community: N reports · M poles corroborated"* stat.
+
+### The schema
+
+`community_reports/ledger.jsonl`, one JSON object per line:
+
+```json
+{"report_id":"CR-2026-0001","pole_id":"P00019","lat":41.914319,"lon":-82.51207,"county":"Saginaw","conditions":["Leaning pole","Cracked/rotted pole"],"severity":"urgent","note":"...","reporter":"resident_se_mi","submitted":"2026-05-02","status":"verified","source":"resident"}
+```
+
+| field | type | notes |
+|---|---|---|
+| `report_id` | string | stable unique id; the payload is sorted by it |
+| `pole_id` | string \| null | fleet pole, or `null` if the location is unmapped |
+| `lat` / `lon` | number | WGS84 |
+| `county` | string | one of the DTE SE-Michigan counties |
+| `conditions` | string[] | canonical condition labels |
+| `severity` | low \| medium \| urgent | reporter's urgency |
+| `note` / `reporter` | string | free text; no PII required (`reporter` may be `""`) |
+| `submitted` | `YYYY-MM-DD` | fixed string (no clock is read) |
+| `status` | verified \| pending \| rejected | moderation state |
+| `source` | resident \| lineman \| sample | origin channel |
+
+### Why an overlay, and explicitly NOT model input
+
+This is the important integrity decision: **community reports are a
+priority / corroboration signal reconciled against the model — they are
+never fed into the model, the features, the calibration, the drivers, the
+tiers, or the risk ordering.**
+
+- This is **public-safety infrastructure data.** An open, user-writable
+  channel wired into the model would be a textbook **abuse and
+  data-poisoning surface** — a single bad actor (or a brigade) could move
+  risk scores and misdirect crews. Keeping the model a closed, deterministic
+  function of the **audited** feature stack (NOAA normals +
+  image-derived structure/vegetation) removes that attack surface entirely.
+- Reports instead ride **alongside** the model output as corroboration:
+  they raise or clear *human attention* and let a planner see *"the model
+  independently says HIGH and two verified field reports agree"* vs.
+  *"uncorroborated"* — without ever letting the crowd edit the score.
+- Every row is **maintainer-reviewed before it appears**, and `rejected`
+  rows are dropped on ingest (they may remain in the file as an audit
+  trail).
+- Ingestion is **fully deterministic** — a fixed committed file, normalized
+  and sorted by `report_id`, no clock / RNG / env / network — so
+  `output/app_data.json` stays **byte-identical across runs** and the
+  offline / self-contained guarantee is preserved (the overlay adds **zero**
+  external resources to `app.html`).
+
+---
 
 ### Captured stdout (verbatim, deterministic)
 
@@ -273,7 +370,7 @@ DONE - reactive -> predictive, imagery-led, validated, in one figure.
 ==========================================================================
 ```
 
-`python -m pytest -q` → **`40 passed`**.
+`python -m pytest -q` → **`53 passed`**.
 
 ---
 
