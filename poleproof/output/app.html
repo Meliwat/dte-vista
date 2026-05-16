@@ -226,13 +226,25 @@
     }
 
     .screen-summary {
+      position: relative;
       display: grid;
       grid-template-columns: minmax(260px, 1fr) auto;
       gap: 16px;
       align-items: center;
       padding: 18px 24px;
       border-bottom: 1px solid var(--line);
-      background: var(--panel-2);
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 34%),
+        var(--panel-2);
+    }
+
+    .screen-summary::before {
+      content: "";
+      position: absolute;
+      inset: 14px auto 14px 0;
+      width: 4px;
+      border-radius: 0 999px 999px 0;
+      background: var(--accent);
     }
 
     .screen-summary h2 {
@@ -299,7 +311,7 @@
     .overview-card {
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--panel);
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
       box-shadow: var(--shadow);
     }
 
@@ -691,9 +703,38 @@
       text-decoration: none;
     }
 
+    .map-link.primary {
+      color: #06100c;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .map-link.secondary {
+      background: var(--panel-2);
+    }
+
     .map-link:hover {
       border-color: var(--accent);
       color: var(--accent-dark);
+    }
+
+    .map-link.primary:hover {
+      color: #06100c;
+    }
+
+    .street-context-note {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: var(--panel);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .street-context-note strong {
+      color: var(--ink);
     }
 
     .worklist {
@@ -2309,6 +2350,69 @@
         ["St. Clair", -82.4900, 42.8200]
       ];
 
+      var STREET_CONTEXTS = {
+        "Wayne": [
+          { label: "Woodward Avenue, Detroit", lat: 42.33155, lon: -83.04581, heading: 22 },
+          { label: "Michigan Avenue, Dearborn", lat: 42.32226, lon: -83.17631, heading: 88 },
+          { label: "Plymouth Road, Livonia", lat: 42.36837, lon: -83.35271, heading: 92 }
+        ],
+        "Oakland": [
+          { label: "Woodward Avenue, Royal Oak", lat: 42.48916, lon: -83.14465, heading: 18 },
+          { label: "Telegraph Road, Southfield", lat: 42.47570, lon: -83.28536, heading: 3 },
+          { label: "Woodward Loop, Pontiac", lat: 42.63892, lon: -83.29105, heading: 212 }
+        ],
+        "Macomb": [
+          { label: "Hall Road, Sterling Heights", lat: 42.62624, lon: -83.03039, heading: 88 },
+          { label: "Gratiot Avenue, Mount Clemens", lat: 42.59859, lon: -82.87710, heading: 29 },
+          { label: "Van Dyke Avenue, Warren", lat: 42.51480, lon: -83.02832, heading: 0 }
+        ],
+        "Washtenaw": [
+          { label: "Main Street, Ann Arbor", lat: 42.28144, lon: -83.74800, heading: 181 },
+          { label: "Michigan Avenue, Ypsilanti", lat: 42.24120, lon: -83.61305, heading: 92 },
+          { label: "Michigan Avenue, Saline", lat: 42.16602, lon: -83.78164, heading: 87 }
+        ],
+        "Livingston": [
+          { label: "Grand River Avenue, Howell", lat: 42.60740, lon: -83.92932, heading: 86 },
+          { label: "Main Street, Brighton", lat: 42.52970, lon: -83.78022, heading: 91 },
+          { label: "Main Street, Pinckney", lat: 42.45636, lon: -83.94639, heading: 96 }
+        ],
+        "St. Clair": [
+          { label: "Military Street, Port Huron", lat: 42.97855, lon: -82.42491, heading: 4 },
+          { label: "Busha Highway, Marysville", lat: 42.91242, lon: -82.48698, heading: 175 },
+          { label: "Water Street, Marine City", lat: 42.71902, lon: -82.49233, heading: 180 }
+        ],
+        "Lapeer": [
+          { label: "Nepessing Street, Lapeer", lat: 43.05133, lon: -83.31883, heading: 92 },
+          { label: "Cedar Street, Imlay City", lat: 43.02494, lon: -83.07772, heading: 181 },
+          { label: "Main Street, Almont", lat: 42.92096, lon: -83.04493, heading: 179 }
+        ],
+        "Genesee": [
+          { label: "Saginaw Street, Flint", lat: 43.01252, lon: -83.68746, heading: 181 },
+          { label: "Saginaw Street, Grand Blanc", lat: 42.92780, lon: -83.62995, heading: 178 },
+          { label: "Main Street, Davison", lat: 43.03495, lon: -83.51801, heading: 88 }
+        ],
+        "Monroe": [
+          { label: "Front Street, Monroe", lat: 41.91656, lon: -83.39771, heading: 91 },
+          { label: "Tecumseh Street, Dundee", lat: 41.95720, lon: -83.65996, heading: 270 },
+          { label: "Monroe Street, Carleton", lat: 42.05988, lon: -83.39077, heading: 90 }
+        ],
+        "Ingham": [
+          { label: "Michigan Avenue, Lansing", lat: 42.73356, lon: -84.55100, heading: 91 },
+          { label: "Grand River Avenue, East Lansing", lat: 42.73688, lon: -84.48370, heading: 91 },
+          { label: "Jefferson Street, Mason", lat: 42.57920, lon: -84.44359, heading: 180 }
+        ],
+        "Saginaw": [
+          { label: "Washington Avenue, Saginaw", lat: 43.41947, lon: -83.95081, heading: 180 },
+          { label: "Bay Road, Saginaw Township", lat: 43.45470, lon: -83.97563, heading: 178 },
+          { label: "Main Street, Frankenmuth", lat: 43.33118, lon: -83.73807, heading: 92 }
+        ],
+        "Lenawee": [
+          { label: "Main Street, Adrian", lat: 41.89755, lon: -84.03717, heading: 92 },
+          { label: "Chicago Boulevard, Tecumseh", lat: 42.00393, lon: -83.94488, heading: 91 },
+          { label: "Adrian Street, Blissfield", lat: 41.83255, lon: -83.86246, heading: 181 }
+        ]
+      };
+
       var TIERS = [
         { id: "all", label: "All", min: 0, color: "#247553" },
         { id: "critical", label: "Critical", min: 0.72, color: "#bd392f" },
@@ -2318,7 +2422,7 @@
 
       var SCREENS = [
         { id: "overview", label: "Overview", title: "Resident-ready pole risk overview", blurb: "Plain-language status before crews, judges, or residents open deeper evidence.", primary: "Review selected receipt", command: "receipt" },
-        { id: "map", label: "Map", title: "Real Michigan map context", blurb: "See where work packets sit and open nearby Google Maps or Street View context.", primary: "Open nearby Street View", command: "street" },
+        { id: "map", label: "Map", title: "Real Michigan map context", blurb: "See where work packets sit and open road-level Google Street View context.", primary: "Open road Street View", command: "street" },
         { id: "work", label: "Packets", title: "Prioritized work packets", blurb: "Tune the inspection budget and review the ranked crew list without extra audit controls in the way.", primary: "Export work packets CSV", command: "csv" },
         { id: "receipt", label: "Receipt", title: "Selected pole receipt", blurb: "Review the evidence, expected risk drop, and crew packet for the active pole.", primary: "Export selected receipt JSON", command: "json" },
         { id: "audit", label: "Audit", title: "Guardrails and source manifest", blurb: "Inspect validation rules, display preferences, and named source inputs.", primary: "Print receipt", command: "print" }
@@ -2456,6 +2560,17 @@
         return 43.36 - row * 0.55 + jitter * 0.34;
       }
 
+      function streetContextFor(county, sequence) {
+        var choices = STREET_CONTEXTS[county] || STREET_CONTEXTS.Wayne;
+        var base = choices[sequence % choices.length];
+        return {
+          label: base.label,
+          lat: base.lat,
+          lon: base.lon,
+          heading: base.heading
+        };
+      }
+
       function nearestStation(lon, lat) {
         var best = STATIONS[0], dist = Infinity;
         STATIONS.forEach(function (s) {
@@ -2522,11 +2637,13 @@
           if (report === "verified") risk = clamp(risk + 0.10, 0.02, 0.99);
           var drivers = makeDrivers({ vegetation: vegetation, lean: lean, wind: wind, flood: flood, soil: soil, access: access, criticality: criticality });
           var segment = "C" + String(1 + countyIndex).padStart(2, "0") + "-S" + (1 + Math.floor(i / COUNTIES.length) % 8);
+          var streetContext = streetContextFor(county, Math.floor(i / COUNTIES.length) + countyIndex);
           var p = {
             id: "PP" + String(i + 1).padStart(5, "0"),
             county: county,
             lon: round(lon, 5),
             lat: round(lat, 5),
+            streetContext: streetContext,
             segment: segment,
             station: nearestStation(lon, lat),
             risk: round(risk, 4),
@@ -2653,7 +2770,8 @@
               '<div class="overview-list">' +
                 '<div class="overview-row"><span>Selected</span><strong>' + esc(selectedLabel) + '</strong></div>' +
                 '<div class="overview-row"><span>Next step</span><strong>' + esc(nextAction) + '</strong></div>' +
-                '<div class="overview-row"><span>Location</span><strong>' + (selected ? esc(coordinateText(selected)) : "No location") + '</strong></div>' +
+                '<div class="overview-row"><span>Pole est.</span><strong>' + (selected ? esc(coordinateText(selected)) : "No location") + '</strong></div>' +
+                '<div class="overview-row"><span>Street View</span><strong>' + (selected ? esc(streetContextLabel(selected)) : "No road context") + '</strong></div>' +
               '</div>' +
             '</div>' +
             '<div class="overview-card">' +
@@ -2828,12 +2946,27 @@
         return p.lat.toFixed(5) + ", " + p.lon.toFixed(5);
       }
 
+      function streetContext(p) {
+        return p.streetContext || { label: "nearby public road", lat: p.lat, lon: p.lon, heading: 0 };
+      }
+
+      function streetContextLabel(p) {
+        return streetContext(p).label;
+      }
+
+      function streetContextText(p) {
+        var ctx = streetContext(p);
+        return ctx.label + " / " + ctx.lat.toFixed(5) + ", " + ctx.lon.toFixed(5);
+      }
+
       function googleMapsUrl(p) {
         return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.lat + "," + p.lon);
       }
 
       function streetViewUrl(p) {
-        return "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + encodeURIComponent(p.lat + "," + p.lon);
+        var ctx = streetContext(p);
+        return "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" +
+          encodeURIComponent(ctx.lat + "," + ctx.lon) + "&heading=" + encodeURIComponent(ctx.heading || 0) + "&pitch=0&fov=80";
       }
 
       function priorityLabel(p) {
@@ -2845,8 +2978,8 @@
 
       function locationActions(p) {
         return '<div class="location-actions">' +
-          '<a class="map-link" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open in Google Maps</a>' +
-          '<a class="map-link" href="' + esc(streetViewUrl(p)) + '" target="_blank" rel="noopener">Open nearby Street View</a>' +
+          '<a class="map-link secondary" href="' + esc(googleMapsUrl(p)) + '" target="_blank" rel="noopener">Open pole estimate</a>' +
+          '<a class="map-link primary" href="' + esc(streetViewUrl(p)) + '" target="_blank" rel="noopener">Open road Street View</a>' +
         '</div>';
       }
 
@@ -2867,8 +3000,8 @@
           { id: "work", label: "Go to Work Packets", group: "Screen", run: function () { setScreen("work"); } },
           { id: "receipt", label: "Go to Receipt", group: "Screen", run: function () { setScreen("receipt"); } },
           { id: "audit", label: "Go to Audit", group: "Screen", run: function () { setScreen("audit"); } },
-          { id: "street", label: "Open nearby Street View", group: "Location", run: function () { if (selected) openExternal(streetViewUrl(selected)); } },
-          { id: "google", label: "Open in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
+          { id: "street", label: "Open road Street View", group: "Location", run: function () { if (selected) openExternal(streetViewUrl(selected)); } },
+          { id: "google", label: "Open pole estimate in Google Maps", group: "Location", run: function () { if (selected) openExternal(googleMapsUrl(selected)); } },
           { id: "csv", label: "Export work packets CSV", group: "Export", run: exportCsv },
           { id: "json", label: "Export selected receipt JSON", group: "Export", run: exportJson },
           { id: "print", label: "Print receipt", group: "Export", run: function () { window.print(); } },
@@ -2941,7 +3074,8 @@
         return '<div class="map-popup">' +
           '<strong>' + esc(priorityLabel(p)) + ' in ' + esc(p.county) + ' County</strong>' +
           '<span>' + esc(p.receipt) + ' / ' + esc(p.action) + '</span>' +
-          '<span>Near ' + esc(coordinateText(p)) + '</span>' +
+          '<span>Pole estimate: ' + esc(coordinateText(p)) + '</span>' +
+          '<span>Street View road: ' + esc(streetContextLabel(p)) + '</span>' +
           locationActions(p) +
         '</div>';
       }
@@ -3445,8 +3579,9 @@
           '<div class="receipt-card">' +
             '<div class="receipt-top">' +
               '<h3>' + esc(p.receipt) + ' / ' + esc(p.id) + '</h3>' +
-              '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Near ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
+              '<p>' + esc(p.county) + ' county, segment ' + esc(p.segment) + ', NOAA station ' + esc(p.station) + '<br>Pole estimate ' + esc(coordinateText(p)) + ' / receipt hash ' + esc(p.hash) + '</p>' +
               locationActions(p) +
+              '<div class="street-context-note"><strong>Street View road context:</strong> ' + esc(streetContextText(p)) + '. This avoids dead-end panorama links from synthetic pole coordinates.</div>' +
               '<div class="receipt-lock"><span>' + esc(p.tier) + ' tier</span><span>' + esc(p.sourceCompleteness) + '/5 sources</span><span>' + esc(p.report === "none" ? "no overlay" : p.report + " overlay") + '</span></div>' +
             '</div>' +
             '<div class="receipt-body">' +
@@ -3530,7 +3665,7 @@
         els.footer.innerHTML = '<strong>Provenance.</strong> Deterministic synthetic DTE-style pole fleet generated locally: ' +
           POLES.length.toLocaleString("en-US") + ' poles across ' + COUNTIES.length +
           ' Southeast Michigan counties. Public-data proxies are named per receipt; resident and crew reports are overlays only, never model training inputs. ' +
-          'Map context uses OpenStreetMap tiles; Google Maps and Street View links open nearby coordinate context in a new tab. ' +
+          'Map context uses OpenStreetMap tiles; Google Maps opens the pole estimate, while Street View opens a nearby public-road anchor for road-level context. ' +
           '<strong>Validation-ready label.</strong> KPI values are synthetic-demo estimates until checked against real DTE inspection, outage, and work-order outcomes. Generated 2026-05-16.';
       }
 
