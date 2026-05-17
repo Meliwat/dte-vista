@@ -3794,7 +3794,13 @@
         var capture = atRisk.length ? captured.length / atRisk.length : 0;
         var baseline = rows.length ? Math.min(1, packets.length / rows.length) : 0;
         var lift = baseline ? capture / baseline : 0;
-        var kpis = [
+        var kpis = state.demoMode ? [
+          ["Wayne proof slice", rows.length.toLocaleString("en-US") + " receipts", "real public-data evidence attached to the demo county", clamp(rows.length / 48, 0.08, 1)],
+          ["Public layers attached", WAYNE_PUBLIC_PROOF.layers.length + " sources", "NOAA, FEMA, USDA, USGS, imagery, and OSM", 1],
+          ["Audit-ready packets", pct(auditReady), "source-complete, high-confidence Wayne receipts", auditReady],
+          ["Estimated benefit", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes in this cycle", clamp(dollars / 120000, 0.08, 1)],
+          ["Storm-ready crew list", packets.length.toLocaleString("en-US") + " packets", "ranked Wayne packets before the wind scenario", clamp(packets.length / 60, 0.08, 1)]
+        ] : [
           ["Lift vs age-cycle", lift.toFixed(2) + "x", "same inspection budget, risk-first order", clamp(lift / 5, 0.08, 1)],
           ["Net benefit / cycle", money(dollars), Math.round(avoided).toLocaleString("en-US") + " avoided outage minutes", clamp(dollars / 1800000, 0.08, 1)],
           ["Audit-ready receipts", pct(auditReady), "source-complete, high-confidence crew packets", auditReady],
