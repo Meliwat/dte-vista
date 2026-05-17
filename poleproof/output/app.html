@@ -2657,6 +2657,14 @@
       border-color: #303642;
     }
 
+    :root[data-demo="true"][data-screen="work"] .controls {
+      display: none !important;
+    }
+
+    :root[data-demo="true"][data-screen="work"] .shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
     /* Impeccable product polish: restrained accents, familiar states, no side-stripe callouts. */
     .screen-summary {
       background: var(--panel);
@@ -3263,6 +3271,7 @@
         overviewScreen: document.getElementById("overviewScreen"),
         opsBanner: document.getElementById("opsBanner"),
         kpis: document.getElementById("kpis"),
+        fieldSubtitle: document.getElementById("fieldSubtitle"),
         objective: document.getElementById("objective"),
         residentSearch: document.getElementById("residentSearch"),
         residentSearchButton: document.getElementById("residentSearchButton"),
@@ -3767,8 +3776,14 @@
       function renderScreenSummary() {
         var screen = screenMeta(state.screen);
         els.screenKicker.textContent = screen.label;
-        els.screenTitle.textContent = screen.title;
-        els.screenBlurb.textContent = screen.blurb;
+        var demoWork = state.demoMode && state.screen === "work";
+        els.screenTitle.textContent = demoWork ? "Wayne public proof slice" : screen.title;
+        els.screenBlurb.textContent = demoWork ? "Storm-ready Wayne packets, real public layers, and one receipt path for judges." : screen.blurb;
+        if (els.fieldSubtitle) {
+          els.fieldSubtitle.textContent = demoWork ?
+            "Wayne County proof slice with real public layers, storm scenario, and ranked work packets." :
+            "Michigan-only map with statewide pole work packets, receipt-level evidence, and ranked crew priorities.";
+        }
         els.screenAction.innerHTML = '<button class="action-btn" type="button" data-command="' + screen.command + '">' + esc(screen.primary) + '</button>';
       }
 
@@ -3913,6 +3928,7 @@
 
       function setDisplayAttrs() {
         document.documentElement.dataset.screen = state.screen;
+        document.documentElement.dataset.demo = state.demoMode ? "true" : "false";
         document.documentElement.dataset.theme = state.theme;
         document.documentElement.dataset.density = state.density;
         document.documentElement.dataset.accent = state.accent;
@@ -3949,6 +3965,11 @@
       }
 
       function renderOpsBanner(rows, packets) {
+        if (state.demoMode) {
+          els.opsBanner.hidden = true;
+          els.opsBanner.innerHTML = "";
+          return;
+        }
         els.opsBanner.hidden = !state.showAlerts;
         if (!state.showAlerts) return;
         var critical = rows.filter(function (p) { return p.tier === "critical"; }).length;
@@ -3972,7 +3993,10 @@
         rows.forEach(function (p) { counties[p.county] = true; });
         var packetCounties = {};
         packets.forEach(function (p) { packetCounties[p.county] = true; });
-        els.fieldMeta.innerHTML =
+        els.fieldMeta.innerHTML = state.demoMode ?
+          '<span>' + rows.length.toLocaleString("en-US") + ' Wayne receipts</span>' +
+          '<span>avg risk ' + pct1(avgRisk) + '</span>' +
+          '<span>Planner test: next-week schedule ready</span>' :
           '<span>' + packets.length + ' packets selected</span>' +
           '<span>' + rows.length.toLocaleString("en-US") + ' filtered receipts</span>' +
           '<span>' + Object.keys(counties).length + ' counties in scope</span>' +
@@ -3999,7 +4023,7 @@
           wayneTop.length + ' top packets' + (wayneCritical ? " with " + wayneCritical + " critical fixes" : "") +
           ' before the storm window.</span></div>' +
           '<div class="btn-row">' +
-            '<button class="action-btn secondary" type="button" data-command="demo">Run demo</button>' +
+            (state.demoMode ? "" : '<button class="action-btn secondary" type="button" data-command="demo">Run demo</button>') +
             '<button class="action-btn secondary" type="button" data-command="demoReceipt">' + (isWayne ? "Open top receipt" : "Focus Wayne") + '</button>' +
           '</div>';
       }
@@ -4232,7 +4256,7 @@
       function runJudgeDemo(openReceipt) {
         state.demoMode = true;
         state.stormMode = true;
-        state.showAlerts = true;
+        state.showAlerts = false;
         state.objective = "outage";
         state.county = PUBLIC_PROOF_COUNTY;
         state.tier = "all";
@@ -4241,7 +4265,7 @@
         state.searchQuery = "Detroit / Wayne County";
         var top = topWaynePackets(1)[0];
         if (top) state.selectedId = top.id;
-        state.searchStatus = "Guided demo: Wayne County public proof slice selected; open the top receipt, review audit proof, then export CSV.";
+        state.searchStatus = "Wayne County public proof slice selected; open the top receipt when ready.";
         setScreen(openReceipt ? "receipt" : "work");
       }
 
