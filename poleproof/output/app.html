@@ -239,12 +239,8 @@
     }
 
     .screen-summary::before {
-      content: "";
-      position: absolute;
-      inset: 14px auto 14px 0;
-      width: 4px;
-      border-radius: 0 999px 999px 0;
-      background: var(--accent);
+      content: none;
+      display: none;
     }
 
     .screen-summary h2 {
@@ -764,7 +760,6 @@
       margin-top: 10px;
       padding: 12px;
       border: 1px solid var(--line);
-      border-left: 4px solid var(--accent);
       border-radius: var(--radius);
       color: var(--ink);
       background: var(--panel);
@@ -782,7 +777,7 @@
     }
 
     .resident-summary.impact {
-      border-left-color: var(--blue);
+      border-color: var(--line);
       background: var(--panel-2);
     }
 
@@ -813,7 +808,6 @@
       margin-top: 10px;
       padding: 0 10px;
       border: 1px solid var(--line);
-      border-left: 4px solid var(--muted);
       border-radius: var(--radius);
       color: var(--ink);
       background: var(--panel-2);
@@ -822,9 +816,9 @@
       text-transform: uppercase;
     }
 
-    .data-proof.real { border-left-color: var(--green); }
-    .data-proof.synthetic { border-left-color: var(--blue); }
-    .data-proof.validation { border-left-color: var(--amber); }
+    .data-proof.real { border-color: var(--green); }
+    .data-proof.synthetic { border-color: var(--blue); }
+    .data-proof.validation { border-color: var(--amber); }
 
     .proof-grid,
     .formula-grid,
@@ -883,7 +877,6 @@
       margin-top: 12px;
       padding: 12px;
       border: 1px solid var(--line);
-      border-left: 4px solid var(--amber);
       border-radius: var(--radius);
       background: var(--panel-2);
     }
@@ -1140,7 +1133,7 @@
 
     .audit li {
       padding: 9px 10px;
-      border-left: 3px solid var(--green);
+      border: 1px solid var(--line);
       background: #f4f7f1;
       font-size: 12px;
       line-height: 1.35;
@@ -1348,12 +1341,8 @@
     }
 
     .kpi::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 3px;
-      background: var(--accent);
-      opacity: 0.86;
+      content: none;
+      display: none;
     }
 
     .kpi span {
@@ -1627,7 +1616,7 @@
     }
 
     tr.row.active td:first-child {
-      box-shadow: inset 3px 0 0 var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
     }
 
     .packet-badge {
@@ -1784,7 +1773,7 @@
     }
 
     .audit li {
-      border-left-color: var(--accent);
+      border-color: var(--line);
       background: var(--panel-2);
     }
 
@@ -2347,14 +2336,8 @@
     }
 
     .kpi::before {
-      content: "";
-      position: absolute;
-      top: 14px;
-      bottom: 14px;
-      left: 0;
-      width: 3px;
-      background: var(--accent);
-      opacity: 0.88;
+      content: none;
+      display: none;
     }
 
     .screen-summary {
@@ -2363,9 +2346,8 @@
     }
 
     .screen-summary::before {
-      inset: 0 auto 0 0;
-      width: 4px;
-      border-radius: 0;
+      content: none;
+      display: none;
     }
 
     .screen-summary h2,
@@ -2417,7 +2399,7 @@
     }
 
     .overview-lead {
-      border-top: 4px solid var(--accent);
+      border-top: 1px solid var(--line);
     }
 
     select,
@@ -2533,7 +2515,7 @@
 
     tr.row.active {
       background: color-mix(in srgb, var(--accent) 14%, var(--panel));
-      box-shadow: inset 4px 0 0 var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
     }
 
     .tier {
@@ -2575,7 +2557,7 @@
     }
 
     .street-context-note {
-      border-left: 4px solid var(--accent);
+      border-color: var(--line);
     }
 
     .leaflet-tooltip.pole-tooltip,
@@ -2673,6 +2655,81 @@
       color: #c6c6c6;
       background: #111318;
       border-color: #303642;
+    }
+
+    /* Impeccable product polish: restrained accents, familiar states, no side-stripe callouts. */
+    .screen-summary {
+      background: var(--panel);
+      box-shadow: inset 0 -1px 0 var(--line);
+    }
+
+    .screen-summary::before,
+    .kpi::before {
+      content: none;
+      display: none;
+    }
+
+    .kpi {
+      background: var(--panel);
+    }
+
+    .kpi-meter i {
+      background: var(--accent);
+    }
+
+    .resident-summary,
+    .resident-summary.impact,
+    .street-context-note,
+    .scenario-card,
+    .audit li {
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .resident-summary {
+      background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+    }
+
+    .resident-summary.impact {
+      background: var(--panel-2);
+    }
+
+    .street-context-note {
+      background: var(--panel-2);
+    }
+
+    .scenario-card {
+      border-color: color-mix(in srgb, var(--amber) 34%, var(--line));
+      background: color-mix(in srgb, var(--amber) 7%, var(--panel));
+    }
+
+    .audit li {
+      background: var(--panel-2);
+    }
+
+    .data-proof {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .data-proof.real {
+      border-color: color-mix(in srgb, var(--green) 52%, var(--line));
+      background: color-mix(in srgb, var(--green) 8%, var(--panel));
+    }
+
+    .data-proof.synthetic {
+      border-color: color-mix(in srgb, var(--blue) 42%, var(--line));
+      background: color-mix(in srgb, var(--blue) 7%, var(--panel));
+    }
+
+    .data-proof.validation {
+      border-color: color-mix(in srgb, var(--amber) 48%, var(--line));
+      background: color-mix(in srgb, var(--amber) 8%, var(--panel));
+    }
+
+    tr.row.active,
+    tr.row.active td:first-child {
+      box-shadow: inset 0 0 0 1px var(--accent);
     }
 
     @media (max-width: 560px) {
@@ -2918,6 +2975,9 @@
       var MICHIGAN_CENTER = [44.55, -85.65];
       var MICHIGAN_LATLNG_BOUNDS = [[MAP_BOUNDS.minLat, MAP_BOUNDS.minLon], [MAP_BOUNDS.maxLat, MAP_BOUNDS.maxLon]];
       var MICHIGAN_PADDED_BOUNDS = [[41.28, -90.9], [48.72, -81.65]];
+      var WAYNE_MAP_BOUNDS = { minLon: -83.58, maxLon: -82.82, minLat: 42.02, maxLat: 42.47 };
+      var WAYNE_CENTER = [42.27, -83.20];
+      var WAYNE_LATLNG_BOUNDS = [[WAYNE_MAP_BOUNDS.minLat, WAYNE_MAP_BOUNDS.minLon], [WAYNE_MAP_BOUNDS.maxLat, WAYNE_MAP_BOUNDS.maxLon]];
 
       var COUNTY_AREAS = [
         "Alcona|44.68|-83.59|0.42|north",
@@ -3765,12 +3825,22 @@
         }[tier] || cssVar("--green", "#37b37f");
       }
 
+      function isWayneMapFocus() {
+        return state.county === PUBLIC_PROOF_COUNTY;
+      }
+
+      function activeMapBounds() {
+        return isWayneMapFocus() ? WAYNE_MAP_BOUNDS : MAP_BOUNDS;
+      }
+
       function normalizedLon(lon) {
-        return clamp((lon - MAP_BOUNDS.minLon) / (MAP_BOUNDS.maxLon - MAP_BOUNDS.minLon), 0, 1);
+        var bounds = activeMapBounds();
+        return clamp((lon - bounds.minLon) / (bounds.maxLon - bounds.minLon), 0, 1);
       }
 
       function normalizedLat(lat) {
-        return clamp((lat - MAP_BOUNDS.minLat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat), 0, 1);
+        var bounds = activeMapBounds();
+        return clamp((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat), 0, 1);
       }
 
       function projectX(lon) {
@@ -4297,7 +4367,7 @@
           maxZoom: 13,
           maxBounds: MICHIGAN_PADDED_BOUNDS,
           maxBoundsViscosity: 0.95
-        }).setView(MICHIGAN_CENTER, 6.5);
+        }).setView(isWayneMapFocus() ? WAYNE_CENTER : MICHIGAN_CENTER, isWayneMapFocus() ? 9.5 : 6.5);
         L.control.zoom({ position: "bottomright" }).addTo(realMap.map);
         L.tileLayer(OSM_TILE_URL, {
           maxZoom: 19,
@@ -4306,7 +4376,10 @@
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(realMap.map);
         addMichiganMask(L);
-        realMap.map.fitBounds(MICHIGAN_LATLNG_BOUNDS, { padding: [8, 8], maxZoom: 6.5 });
+        realMap.map.fitBounds(isWayneMapFocus() ? WAYNE_LATLNG_BOUNDS : MICHIGAN_LATLNG_BOUNDS, {
+          padding: [8, 8],
+          maxZoom: isWayneMapFocus() ? 9.75 : 6.5
+        });
         realMap.layer = L.layerGroup().addTo(realMap.map);
         realMap.ready = true;
         setTimeout(function () {
@@ -4344,7 +4417,7 @@
         var packetIds = {};
         packets.forEach(function (p) { packetIds[p.id] = true; });
         var selected = selectedPole();
-        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 260 : 80);
+        var context = statewideContextRows(rows, packetIds, state.county === "All counties" ? 260 : (isWayneMapFocus() ? 24 : 80));
         var shown = context.concat(packets);
         if (selected && !shown.some(function (p) { return p.id === selected.id; })) shown.push(selected);
         realMap.layer.clearLayers();
@@ -4372,9 +4445,14 @@
           if (p.id === state.selectedId) selectedMarker = marker;
         });
 
-        var focus = state.county === "All counties" ? shown.slice() : packets.slice();
+        var focus = isWayneMapFocus() ? [] : (state.county === "All counties" ? shown.slice() : packets.slice());
         if (selected && !focus.some(function (p) { return p.id === selected.id; })) focus.push(selected);
-        if (focus.length) {
+        if (isWayneMapFocus()) {
+          realMap.map.fitBounds(WAYNE_LATLNG_BOUNDS, {
+            padding: [24, 24],
+            maxZoom: 10.25
+          });
+        } else if (focus.length) {
           realMap.map.fitBounds(L.latLngBounds(focus.map(function (p) { return [p.lat, p.lon]; })), {
             padding: [34, 34],
             maxZoom: state.county === "All counties" ? 7 : 10
@@ -4399,6 +4477,31 @@
         var labelColor = cssVar("--muted", "#8d9b91");
         var stationColor = cssVar("--blue", "#57a9dc");
         var bg = '<rect x="0" y="0" width="760" height="430" fill="' + mapBg + '"></rect>';
+        if (isWayneMapFocus()) {
+          var wayneWater = '<path d="M628 18 C686 80 704 150 690 226 C678 294 716 350 672 420 L760 430 L760 0 Z" fill="' + waterColor + '" opacity="0.88"></path>';
+          var wayneGrid = "";
+          for (var wx = 60; wx < 730; wx += 72) wayneGrid += '<path d="M' + wx + ' 28 L' + (wx - 22) + ' 404" stroke="' + gridColor + '" stroke-width="1"></path>';
+          for (var wy = 54; wy < 405; wy += 50) wayneGrid += '<path d="M34 ' + wy + ' L724 ' + (wy + 16) + '" stroke="' + gridColor + '" stroke-width="1"></path>';
+          var places = [
+            ["DETROIT", 42.3314, -83.0458],
+            ["DEARBORN", 42.3223, -83.1763],
+            ["LIVONIA", 42.3684, -83.3527],
+            ["WYANDOTTE", 42.2142, -83.1499],
+            ["GROSSE POINTE", 42.3861, -82.9119],
+            ["WAYNE PROOF SLICE", 42.075, -83.52]
+          ].map(function (p) {
+            return '<text x="' + projectX(p[2]).toFixed(1) + '" y="' + projectY(p[1]).toFixed(1) +
+              '" font-size="10" fill="' + labelColor + '" font-weight="850">' + esc(p[0]) + '</text>';
+          }).join("");
+          var wayneStations = STATIONS.filter(function (s) {
+            return s[0] === "Detroit Metro" || s[0] === "Detroit City";
+          }).map(function (s) {
+            return '<g><circle cx="' + projectX(s[1]) + '" cy="' + projectY(s[2]) + '" r="4" fill="' + stationColor + '"></circle>' +
+              '<text x="' + (projectX(s[1]) + 7) + '" y="' + (projectY(s[2]) + 4) + '" font-size="9" fill="' + stationColor + '" font-weight="800">' + esc(s[0]) + '</text></g>';
+          }).join("");
+          svg.innerHTML = bg + wayneWater + wayneGrid + places + wayneStations;
+          return;
+        }
         var water = '<path d="M657 41 C725 88 735 160 704 218 C686 252 708 301 675 352 C654 384 619 394 604 360 C588 323 610 274 594 235 C571 179 604 88 657 41Z" fill="' + waterColor + '" opacity="0.9"></path>';
         var grid = "";
         for (var x = 70; x < 720; x += 80) grid += '<path d="M' + x + ' 40 L' + (x - 36) + ' 392" stroke="' + gridColor + '" stroke-width="1"></path>';
